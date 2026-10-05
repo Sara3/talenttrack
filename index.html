@@ -205,6 +205,23 @@ button,input,select,textarea{font:inherit;color:inherit}
 .toast[hidden]{display:none}
 .toast button{background:none;border:0;color:inherit;font-weight:700;text-decoration:underline;cursor:pointer;padding:4px}
 
+/* AI interview agent */
+.chat{display:flex;flex-direction:column;gap:10px;max-height:440px;overflow-y:auto;padding:14px;background:var(--bg);border:1px solid var(--line);border-radius:10px}
+.chat:empty{display:none}
+.msg{max-width:min(80%,60ch);padding:10px 12px;border-radius:12px;line-height:1.45;overflow-wrap:anywhere;white-space:pre-wrap}
+.msg.agent{align-self:flex-start;background:var(--surface);border:1px solid var(--line)}
+.msg.cand{align-self:flex-end;background:var(--primary);color:var(--on-primary)}
+.msg .who{display:block;font-size:.72rem;font-weight:700;opacity:.75;margin-bottom:2px;white-space:normal}
+.msg.typing{color:var(--muted);font-style:italic}
+.ag-input{display:grid;gap:8px}
+.ag-input textarea{width:100%;min-height:90px;padding:10px;border:1.5px solid var(--line);border-radius:8px;background:var(--bg);resize:vertical}
+.ag-progress{font-size:.88rem;color:var(--muted);font-weight:600}
+.ag-scores{display:grid;gap:8px}
+.ag-scores li{padding:10px 0;border-top:1px solid var(--line);display:grid;gap:2px}
+.ag-scores .muted{color:var(--muted);font-size:.9rem}
+.badge-ai{background:var(--sunken);color:var(--primary);font-weight:700;padding:1px 8px;border-radius:999px}
+.transcript summary{cursor:pointer;color:var(--primary);font-weight:600}
+.transcript p{margin-top:4px;font-size:.85rem}
 /* scorecards + start dates */
 .sc-form{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;align-items:end;margin-bottom:28px}
 .sc-form .field select,.sc-form .field input,.ramp-controls input{height:44px;padding:0 10px;border:1.5px solid var(--line);border-radius:8px;background:var(--bg);width:100%;min-width:0}
@@ -291,6 +308,7 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     <a href="#board">Board</a>
     <a href="#scorecards">Scorecards</a>
     <a href="#starts">Start dates</a>
+    <a href="#agent-panel">AI interview</a>
     <a href="#ai">AI tools</a>
     <a href="#how">How it works</a>
     <a href="#fit">Is it a fit</a>
@@ -395,10 +413,36 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
       <p class="desc">Switch on the routine work you want done for you. Each rule runs the moment its trigger happens.</p>
       <div class="auto-rules">
         <label><input type="checkbox" id="auto-book"> <span>Book an interview slot as soon as someone reaches Interview</span></label>
+        <label><input type="checkbox" id="auto-ai"> <span>Hand the interview to the AI Interview Agent as soon as someone reaches Interview</span></label>
         <label><input type="checkbox" id="auto-adv"> <span>Move a candidate to the next stage after a strong interview (4.0 or higher)</span></label>
       </div>
       <p class="sub-h">Recent autopilot activity</p>
       <ul class="auto-log" id="auto-log" aria-live="polite"></ul>
+    </div>
+
+    <div class="ai-panel ai-auto" id="agent-panel">
+      <h3>AI Interview Agent</h3>
+      <p class="desc">Hand the interview to an agent. It asks the candidate four support scenarios, follows up when an answer is thin, then fills in the Empathy, Troubleshooting and Written communication scorecard with notes on what it found. The scoring rules are shown with the result.</p>
+      <div class="iv-pick">
+        <div class="field">
+          <label for="ag-cand">Candidate to interview</label>
+          <select id="ag-cand"></select>
+        </div>
+        <button type="button" class="btn" id="ag-start">Start AI interview</button>
+      </div>
+      <p class="err" id="ag-err" role="alert"></p>
+      <p class="ag-progress" id="ag-progress" hidden></p>
+      <div class="chat" id="ag-chat" aria-live="polite" aria-label="Interview conversation"></div>
+      <div class="ag-input" id="ag-input" hidden>
+        <label class="sub-h" for="ag-text">Candidate's answer</label>
+        <textarea id="ag-text" placeholder="Type the answer as you would write it to a customer"></textarea>
+        <div class="btn-row">
+          <button type="button" class="btn btn-sm" id="ag-send">Send answer</button>
+          <button type="button" class="btn btn-sm btn-ghost" id="ag-sample">Fill in a sample answer</button>
+          <button type="button" class="btn-quiet" id="ag-stop">End interview</button>
+        </div>
+      </div>
+      <div class="ai-out" id="ag-result" tabindex="-1"></div>
     </div>
 
     <div class="ai-grid">
@@ -429,7 +473,7 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
 
       <div class="ai-panel ai-wide" id="iv-panel">
         <h3>AI Interviewer</h3>
-        <p class="desc">Pick a candidate and get a structured interview written for their role. Type or paste what they said, let it score the answers, and get a recommendation.</p>
+        <p class="desc">Running the interview yourself? Pick a candidate and get a structured interview written for their role. Type or paste what they said, let it score the answers, and get a recommendation.</p>
         <div class="iv-pick">
           <div class="field">
             <label for="iv-cand">Candidate to interview</label>
@@ -565,6 +609,7 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     { title: 'Offer and joining dates', detail: 'Record the offer accepted date and notice period on any candidate. TalentTrack works out the expected joining date and flags renege risk when the notice period is over 60 days.' },
     { title: 'Interview scorecards', detail: 'Rate Empathy, Troubleshooting and Written communication from 1 to 5 with the interviewer\u2019s name and a note. Any number of scorecards per candidate, averaged on the card and compared side by side.' },
     { title: 'Stage aging', detail: 'Every card shows its days in the current stage, and anyone over 5 days is flagged as stuck.' },
+    { title: 'AI Interview Agent', detail: 'Hand the Interview stage to an agent. It runs a four-question support interview with follow-ups, scores Empathy, Troubleshooting and Written communication with the reasons shown, and saves a signed scorecard with the transcript.' },
     { title: 'Start dates and ramp', detail: 'Set expected start dates for Offer and Hired, a ramp period and a target agent count. See agents on the floor week by week and a warning when you will be short.' }
   ];
   var CRITERIA = [
@@ -599,7 +644,7 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     function shift(days) { return toYMD(new Date(today.getFullYear(), today.getMonth(), today.getDate() + days)); }
     var s = {
       stuckDays: 5,
-      auto: { book: true, advance: true },
+      auto: { book: true, advance: true, ai: true },
       ramp: { weeks: 2, target: 4, neededBy: shift(42) },
       log: [],
       candidates: rows.map(function (r, i) {
@@ -624,6 +669,7 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
       ['Marcus Lee', 3, 4, 3, 'Written reply was correct but short on warmth.']
     ]);
     s.candidates[6].interviewAt = openSlot([]);   // one interview already on the calendar
+    s.candidates[7].aiStatus = 'pending';         // waiting on the AI Interview Agent
     s.candidates[8].acceptedDate = shift(-2);
     s.candidates[8].noticeDays = 90;             // over 60: shows the renege-risk badge
     s.candidates[8].startDate = shift(19);
@@ -636,6 +682,7 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     if (!s.auto || typeof s.auto !== 'object') s.auto = {};
     if (typeof s.auto.book !== 'boolean') s.auto.book = true;
     if (typeof s.auto.advance !== 'boolean') s.auto.advance = true;
+    if (typeof s.auto.ai !== 'boolean') s.auto.ai = true;
     if (!Array.isArray(s.log)) s.log = [];
     if (!s.ramp || typeof s.ramp !== 'object') s.ramp = {};
     if (!validInt(s.ramp.weeks, 0, 12)) s.ramp.weeks = 2;
@@ -724,6 +771,10 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     if (iv === -1) return null;
     var idx = stageIndex(c.stage);
     if (idx > iv && typeof c.interviewAt === 'number') delete c.interviewAt;
+    if (idx === iv && state.auto.ai && c.aiStatus !== 'done') {
+      c.aiStatus = 'pending';
+      logAuto('Handed ' + c.name + '\u2019s interview to the AI Interview Agent');
+    }
     if (idx === iv && state.auto.book && typeof c.interviewAt !== 'number') {
       var t = openSlot(takenSlots(c.id));
       if (t) {
@@ -869,6 +920,8 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     if (isRenegeRisk(c)) meta.appendChild(el('span', { 'class': 'badge-renege' }, 'Renege risk'));
     if (typeof c.interviewAt === 'number') meta.appendChild(el('span', { 'class': 'badge-score badge-when' }, 'Interview booked ' + fmtWhen(c.interviewAt)));
     if (typeof c.score === 'number') meta.appendChild(el('span', { 'class': 'badge-score' }, 'Interview score ' + c.score.toFixed(1) + ' / 5'));
+    if (c.aiStatus === 'pending' && c.stage === 'interview') meta.appendChild(el('span', { 'class': 'badge-ai' }, 'AI interview pending'));
+    if (c.aiStatus === 'done') meta.appendChild(el('span', { 'class': 'badge-ai' }, 'AI interviewed'));
     li.appendChild(meta);
 
     var avg = scoreAvgs(c);
@@ -888,6 +941,11 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     var addSc = el('button', { type: 'button', 'class': 'btn-quiet add-sc', 'aria-label': 'Add a scorecard for ' + c.name }, avg ? 'Add scorecard' : 'Add first scorecard');
     addSc.addEventListener('click', function () { openScoreForm(c.id); });
     li.appendChild(addSc);
+    if (c.stage === 'interview') {
+      var runAi = el('button', { type: 'button', 'class': 'btn-quiet add-sc', 'aria-label': 'Run the AI interview for ' + c.name }, c.aiStatus === 'done' ? 'Run AI interview again' : 'Run AI interview');
+      runAi.addEventListener('click', function () { openAgent(c.id); });
+      li.appendChild(runAi);
+    }
 
     if (next) {
       var b = el('button', { type: 'button', 'class': 'btn btn-next', 'aria-label': 'Move ' + c.name + ' to ' + next.name }, 'Move to ' + next.name);
@@ -1060,6 +1118,7 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
 
   function resetDemo() {
     var before = snapshot();
+    if (AG) agStop();
     ivCandId = null; ivResult = null; detailId = null; $('iv-kit').textContent = '';
     state = ensureDefaults(seed());
     onlyStuck = false; $('only-stuck').checked = false;
@@ -1448,7 +1507,14 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
       var sum = 0;
       CRITERIA.forEach(function (k) { sum += x[k.id]; tr.appendChild(scoreCell(x[k.id])); });
       tr.appendChild(scoreCell(sum / CRITERIA.length));
-      tr.appendChild(el('td', { 'class': 'note-cell' }, x.note || DASH));
+      var noteTd = el('td', { 'class': 'note-cell' }, x.note || DASH);
+      if (Array.isArray(x.transcript) && x.transcript.length) {
+        var det = el('details', { 'class': 'transcript' });
+        det.appendChild(el('summary', null, 'Transcript'));
+        x.transcript.forEach(function (m) { det.appendChild(el('p', null, (m.from === 'agent' ? 'Agent: ' : 'Candidate: ') + m.text)); });
+        noteTd.appendChild(det);
+      }
+      tr.appendChild(noteTd);
       var td = el('td');
       var del = el('button', { type: 'button', 'class': 'btn-quiet', 'aria-label': 'Delete the scorecard from ' + x.who }, 'Delete');
       del.addEventListener('click', function () { deleteScorecard(dc.id, x.id); });
@@ -1575,10 +1641,209 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     $(id).addEventListener('change', function () { safely(renderRamp); });
   }
 
+  /* ---------- AI Interview Agent ---------- */
+  var AGENT_NAME = 'AI Interview Agent';
+  var AG_STEPS = [
+    { crit: 'empathy',
+      q: 'A customer writes: "This is the third time I have contacted you and nobody has fixed my billing problem. I am done." How would you reply to them?',
+      follow: 'Thanks. What would you say first to show them you understand how they feel, and what would you promise to do next?',
+      sample: 'Hi Jordan, I am really sorry you have had to contact us three times. I can imagine how frustrating that is. I will take ownership of this myself: I am checking your billing history right now and I will update you today with a fix or a clear date for one.',
+      weak: function (t) { return checksFor('empathy', t).found.length < 3; } },
+    { crit: 'troubleshooting',
+      q: 'A customer says the app will not let them log in. Walk me through the steps you would take to find the cause.',
+      follow: 'What would you check first, and what would you do if that was not the cause?',
+      sample: 'First I would ask which device and browser they use and whether they see an error message. Then I would check the account status and whether there is an outage. Next I would try a password reset and clearing the cache. If I can reproduce it, I would test the fix with them and confirm they can log in. If not, I would escalate to engineering with the logs.',
+      weak: function (t) { return checksFor('troubleshooting', t).found.length < 3; } },
+    { crit: 'troubleshooting',
+      q: 'Tell me about a tricky problem you solved for someone. How did you find the root cause?',
+      follow: 'What did you try that did not work, and how did you know you had found the real cause?',
+      sample: 'A customer kept getting logged out. I asked when it happened and found it was only on their work laptop. I checked the logs and saw the session cookie was being blocked by a browser extension. I tested with the extension off, confirmed that was the root cause, and wrote a help article so the team could fix it faster next time.',
+      weak: function (t) { return t.split(/\s+/).filter(Boolean).length < 30; } },
+    { crit: 'written',
+      q: 'Last one. Write the message you would send a customer to tell them their refund will take 5 to 7 business days.',
+      follow: 'Could you turn that into the full message you would actually send, with a greeting and a sign-off?',
+      sample: 'Hi Sam,\n\nThank you for your patience. Your refund has been approved and will reach your account in 5 to 7 business days. You do not need to do anything else.\n\nIf it has not arrived by then, reply to this email and I will look into it right away.\n\nBest regards,\nAlex',
+      weak: function (t) { return checksFor('written', t).found.length < 3; } }
+  ];
+  var AG_CHECKS = {
+    empathy: [
+      ['acknowledged their feelings', function (t) { return /frustrat|understand|imagine|hear you|annoy|upset|disappoint|must (be|have)/i.test(t); }],
+      ['apologized', function (t) { return /sorry|apolog/i.test(t); }],
+      ['took ownership', function (t) { return /\bI('ll| will| am going to|'m going to)\b|let me|I can|personally|myself/i.test(t); }],
+      ['gave a clear next step', function (t) { return /today|right now|within|tomorrow|follow up|update you|next step|refund|fix|resolve|by (the )?end of/i.test(t); }]
+    ],
+    troubleshooting: [
+      ['asked clarifying questions', function (t) { return /\?|\bask\b|find out|which (device|browser|app)|error message|when (it|did)/i.test(t); }],
+      ['worked in ordered steps', function (t) { return /\bfirst\b|\bthen\b|\bnext\b|after that|^\s*\d[.)]/im.test(t); }],
+      ['checked likely causes', function (t) { return /password|cache|cookie|browser|device|version|account|status|outage|network|extension|settings/i.test(t); }],
+      ['tested or confirmed the fix', function (t) { return /reproduc|\btest|verif|confirm/i.test(t); }],
+      ['found the root cause or escalated well', function (t) { return /root cause|escalat|engineer|logs?\b|ticket/i.test(t); }]
+    ],
+    written: [
+      ['greeting and sign-off', function (t) { return /^\s*(hi|hello|dear|hey|good (morning|afternoon))\b/im.test(t) && /(thanks|thank you|regards|best|cheers|sincerely|warmly)/i.test(t); }],
+      ['complete, punctuated sentences', function (t) { var ss = sentences(t); return ss.length >= 2 && ss.filter(function (x) { return /^[A-Z0-9"']/.test(x); }).length / ss.length >= 0.8 && ss.filter(function (x) { return /[.!?]$/.test(x); }).length / ss.length >= 0.6; }],
+      ['easy to read', function (t) { var ss = sentences(t); if (!ss.length) return false; var w = t.split(/\s+/).filter(Boolean).length / ss.length; return w >= 5 && w <= 25; }],
+      ['included the key facts', function (t) { return /(5|five)\s*(to|-|–)\s*(7|seven)/i.test(t) && /business days/i.test(t); }],
+      ['professional tone', function (t) { return t.trim().length > 0 && !/[A-Z]{5,}|\bu\b|\bur\b|\bpls\b|!!|\blol\b/.test(t); }]
+    ]
+  };
+  function sentences(t) { return (t.match(/[^.!?\n]+[.!?]?/g) || []).map(function (x) { return x.trim(); }).filter(function (x) { return x.split(/\s+/).length >= 3; }); }
+  function checksFor(crit, t) {
+    var found = [], missing = [];
+    AG_CHECKS[crit].forEach(function (c) { (c[1](t || '') ? found : missing).push(c[0]); });
+    return { found: found, missing: missing, score: Math.max(1, Math.min(5, 1 + found.length)) };
+  }
+
+  var AG = null;   // the interview in progress
+  function agEl(id) { return $(id); }
+  function agSay(from, text) {
+    var chat = agEl('ag-chat');
+    var m = el('div', { 'class': 'msg ' + from });
+    m.appendChild(el('span', { 'class': 'who' }, from === 'agent' ? AGENT_NAME : (AG ? AG.name : 'Candidate')));
+    m.appendChild(document.createTextNode(text));
+    chat.appendChild(m);
+    chat.scrollTop = chat.scrollHeight;
+    if (AG) AG.transcript.push({ from: from, text: text });
+  }
+  function agProgress() {
+    var p = agEl('ag-progress');
+    if (!AG || AG.done) { p.hidden = true; return; }
+    p.hidden = false;
+    p.textContent = 'Question ' + (AG.step + 1) + ' of ' + AG_STEPS.length + (AG.followed ? ', follow-up' : '') + '. Interviewing ' + AG.name + '.';
+  }
+  function agAsk(text, delay) {
+    AG.busy = true;
+    agEl('ag-send').disabled = true;
+    var chat = agEl('ag-chat');
+    var typing = el('div', { 'class': 'msg agent typing' }, 'Agent is typing…');
+    chat.appendChild(typing); chat.scrollTop = chat.scrollHeight;
+    var token = AG.token;
+    window.setTimeout(function () {
+      if (!AG || AG.token !== token) { if (typing.parentNode) typing.parentNode.removeChild(typing); return; }
+      if (typing.parentNode) typing.parentNode.removeChild(typing);
+      agSay('agent', text);
+      AG.busy = false;
+      agEl('ag-send').disabled = false;
+      agProgress();
+      var ta = agEl('ag-text'); if (ta) ta.focus({ preventScroll: true });
+    }, delay == null ? 450 : delay);
+  }
+  function openAgent(id) {
+    fillCandSelect(agEl('ag-cand'));
+    agEl('ag-cand').value = id;
+    agEl('agent-panel').scrollIntoView({ behavior: smooth(), block: 'start' });
+    startAgent();
+  }
+  function startAgent() {
+    var c = byId(agEl('ag-cand').value);
+    if (!c) { agEl('ag-err').textContent = 'Add a candidate to the board first.'; return; }
+    agEl('ag-err').textContent = '';
+    AG = { cid: c.id, name: c.name, step: 0, followed: false, answers: { empathy: '', troubleshooting: '', written: '' }, stepText: '', transcript: [], done: false, busy: false, token: Date.now() + Math.random() };
+    agEl('ag-chat').textContent = '';
+    agEl('ag-result').textContent = '';
+    agEl('ag-input').hidden = false;
+    agEl('ag-text').value = '';
+    agEl('ag-cand').disabled = true;
+    agEl('ag-start').textContent = 'Restart interview';
+    agSay('agent', 'Hi ' + c.name.split(' ')[0] + ', I am the TalentTrack interview agent for the ' + c.role + ' role. I will ask you ' + AG_STEPS.length + ' short questions about real support situations. Answer the way you would write to a customer. There are no trick questions.');
+    agAsk(AG_STEPS[0].q, 600);
+    agProgress();
+  }
+  function agSend() {
+    if (!AG || AG.done || AG.busy) return;
+    var ta = agEl('ag-text');
+    var text = ta.value.trim();
+    if (!text) { agEl('ag-err').textContent = 'Type an answer before sending.'; ta.focus(); return; }
+    agEl('ag-err').textContent = '';
+    ta.value = '';
+    agSay('cand', text);
+    var st = AG_STEPS[AG.step];
+    AG.stepText += (AG.stepText ? '\n' : '') + text;
+    AG.answers[st.crit] += (AG.answers[st.crit] ? '\n' : '') + text;
+    if (!AG.followed && st.weak(AG.stepText)) {
+      AG.followed = true;
+      agAsk(st.follow);
+      return;
+    }
+    AG.step++; AG.followed = false; AG.stepText = '';
+    if (AG.step < AG_STEPS.length) { agAsk(AG_STEPS[AG.step].q); return; }
+    agFinish();
+  }
+  function agSample() {
+    if (!AG || AG.done) return;
+    var st = AG_STEPS[AG.step];
+    agEl('ag-text').value = AG.followed ? st.sample.split('. ').slice(-2).join('. ') : st.sample;
+    agEl('ag-text').focus();
+  }
+  function agStop() {
+    if (!AG) return;
+    AG.token = null; AG = null;
+    agEl('ag-input').hidden = true;
+    agEl('ag-cand').disabled = false;
+    agEl('ag-start').textContent = 'Start AI interview';
+    agEl('ag-progress').hidden = true;
+    var chat = agEl('ag-chat');
+    chat.appendChild(el('div', { 'class': 'msg agent' }, 'Interview ended early. Nothing was scored.'));
+  }
+  function agFinish() {
+    var c = byId(AG.cid);
+    AG.done = true;
+    agEl('ag-input').hidden = true;
+    agEl('ag-progress').hidden = true;
+    agEl('ag-cand').disabled = false;
+    agEl('ag-start').textContent = 'Start AI interview';
+    if (!c) { agEl('ag-err').textContent = 'That candidate was removed from the board, so nothing was saved.'; AG = null; return; }
+    var res = {};
+    CRITERIA.forEach(function (k) { res[k.id] = checksFor(k.id, k.id === 'written' ? AG.answers.written + '\n\n' : AG.answers[k.id]); });
+    // Written communication also counts how they wrote every answer, not just the last one.
+    var overallWriting = checksFor('written', AG.answers.written);
+    res.written = overallWriting;
+    var avg = (res.empathy.score + res.troubleshooting.score + res.written.score) / 3;
+    var note = 'Interviewed by the AI agent. ' + CRITERIA.map(function (k) {
+      return (k.short || k.name) + ' ' + res[k.id].score + ': ' + (res[k.id].found.length ? res[k.id].found.join(', ') : 'none of the checks') + (res[k.id].missing.length ? '; missing ' + res[k.id].missing.join(', ') : '');
+    }).join('. ') + '.';
+    agSay('agent', 'Thank you, that is everything. Your answers go to the hiring team now.');
+    var card = { id: 'sc' + Date.now().toString(36) + 'ai', who: AGENT_NAME, empathy: res.empathy.score, troubleshooting: res.troubleshooting.score, written: res.written.score, note: note, t: Date.now(), transcript: AG.transcript.slice() };
+    c.scorecards.push(card);
+    c.aiStatus = 'done';
+    detailId = c.id;
+    var moved = null;
+    if (avg >= 4 && state.auto.advance) {
+      var next = STAGES[stageIndex(c.stage) + 1];
+      if (next) {
+        c.stage = next.id; c.enteredAt = Date.now();
+        logAuto('Moved ' + c.name + ' to ' + next.name + ' after a ' + avg.toFixed(1) + ' AI interview');
+        afterStageChange(c);
+        moved = next.name;
+      }
+    }
+    logAuto('AI Interview Agent scored ' + c.name + ' ' + avg.toFixed(1) + ' out of 5');
+    AG = null;
+    delete $('ag-cand').dataset.touched;
+    save(); render();
+    var out = agEl('ag-result');
+    out.textContent = '';
+    out.appendChild(el('p', { 'class': 'rec-summary' }, 'Scorecard saved for ' + c.name + ': ' + avg.toFixed(1) + ' out of 5, signed by the ' + AGENT_NAME + '.'));
+    var ul = el('ul', { 'class': 'ag-scores' });
+    CRITERIA.forEach(function (k) {
+      var li = el('li');
+      li.appendChild(el('strong', null, k.name + ': ' + res[k.id].score + ' of 5'));
+      li.appendChild(el('span', { 'class': 'muted' }, 'Found: ' + (res[k.id].found.join(', ') || 'none') + '.' + (res[k.id].missing.length ? ' Missing: ' + res[k.id].missing.join(', ') + '.' : '')));
+      ul.appendChild(li);
+    });
+    out.appendChild(ul);
+    out.appendChild(el('p', { 'class': 'iv-verdict' }, avg >= 4 ? 'Recommendation: strong interview. Move them forward.' : avg >= 3 ? 'Recommendation: mixed interview. Book a second conversation before you decide.' : 'Recommendation: weak interview. Do not move them forward.'));
+    if (moved) out.appendChild(el('p', null, 'Autopilot moved ' + c.name + ' to ' + moved + '.'));
+    out.appendChild(el('p', { 'class': 'ai-note' }, 'Each criterion starts at 1 and gains a point for every check the answers meet, up to 5. A person should review the transcript before making a final decision.'));
+    out.focus();
+    toast('AI interview scored ' + c.name + ' ' + avg.toFixed(1) + ' / 5' + (moved ? '. Autopilot moved them to ' + moved : ''));
+  }
+
   /* ---------- Autopilot ---------- */
   function renderAutopilot() {
     $('auto-book').checked = !!state.auto.book;
     $('auto-adv').checked = !!state.auto.advance;
+    $('auto-ai').checked = !!state.auto.ai;
     var ul = $('auto-log');
     ul.textContent = '';
     if (!state.log.length) { ul.appendChild(el('li', { 'class': 'none' }, 'Nothing yet. Move someone to Interview on the board and it will show up here.')); return; }
@@ -1600,6 +1865,7 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     safely(renderScheduler);
     safely(renderScorecards);
     safely(renderRamp);
+    safely(function () { if (!AG) { fillCandSelect($('ag-cand')); var pend = state.candidates.filter(function (c) { return c.aiStatus === 'pending' && c.stage === 'interview'; })[0]; if (pend && !$('ag-cand').dataset.touched) $('ag-cand').value = pend.id; } });
   }
 
   /* ---------- Toast ---------- */
@@ -1667,6 +1933,13 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
   $('auto-book').addEventListener('change', function (e) { state.auto.book = e.target.checked; save(); });
   $('auto-adv').addEventListener('change', function (e) { state.auto.advance = e.target.checked; save(); });
   $('score-form').addEventListener('submit', saveScoreForm);
+  $('auto-ai').addEventListener('change', function (e) { state.auto.ai = e.target.checked; save(); });
+  $('ag-cand').addEventListener('change', function () { $('ag-cand').dataset.touched = '1'; });
+  $('ag-start').addEventListener('click', function () { if (AG) { AG.token = null; AG = null; } startAgent(); });
+  $('ag-send').addEventListener('click', agSend);
+  $('ag-sample').addEventListener('click', agSample);
+  $('ag-stop').addEventListener('click', agStop);
+  $('ag-text').addEventListener('keydown', function (e) { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); agSend(); } });
   $('sf-cand').addEventListener('change', function () { if (byId($('sf-cand').value) && byId($('sf-cand').value).scorecards.length) { detailId = $('sf-cand').value; renderScorecards(); } });
   rampInput('rp-weeks', 'weeks', 0, 12);
   rampInput('rp-target', 'target', 1, 500);
