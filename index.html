@@ -487,7 +487,7 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
 
     <div class="ai-panel ai-auto" id="auto-panel">
       <h3>Autopilot</h3>
-      <p class="desc">Runs for every candidate handed off to AI agents on their card. The agents interview them as soon as they reach Interview, and these rules cover the rest. Candidates you handle yourself or hand to our team are never moved automatically.</p>
+      <p class="desc">Runs for every candidate handed to an AI agent on their card. The agent interviews them as soon as they reach Interview, and these rules cover the rest. Candidates with the customer or the TalentTrack team are never moved automatically.</p>
       <div class="auto-rules">
         <label><input type="checkbox" id="auto-book"> <span>Book an interview slot as soon as someone reaches Interview</span></label>
         <label><input type="checkbox" id="auto-adv"> <span>Move a candidate to the next stage after a strong interview (4.0 or higher)</span></label>
@@ -570,7 +570,7 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     <ol class="dfy">
       <li><h3>We run the pipeline</h3><p>We source and screen candidates for your open roles and keep every one of them on your board, with how long they have been waiting.</p></li>
       <li><h3>We do the interviews</h3><p>Our interviewers and the AI Interview Agent run structured interviews and score Empathy, Troubleshooting and Written communication, so you compare candidates on the same scale.</p></li>
-      <li><h3>You choose who runs each candidate</h3><p>Every card has a hand-off. Run a candidate yourself, hand them to our AI agents, or hand them to our consultants. Switch at any stage, and the hire reaches your team with their scorecards and start date, wherever you work.</p></li>
+      <li><h3>You choose who carries on</h3><p>Every card has a hand-off for the interview and scheduling: you keep the candidate, assign them to a named recruiter on the TalentTrack team, or give them to an AI agent. Switch at any stage, and the hire reaches your team with their scorecards and start date, wherever you work.</p></li>
     </ol>
   </section>
 
@@ -668,7 +668,7 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
 
 <footer class="wrap site-foot">
   <p>TalentTrack is built by <strong id="team-name"></strong></p>
-  <span class="version">Version 9, 5 Oct 2026</span>
+  <span class="version">Version 10, 5 Oct 2026</span>
   <button type="button" class="btn-quiet" id="reset-btn">Reset demo data</button>
 </footer>
 
@@ -696,14 +696,16 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     { title: 'Interview scorecards', detail: 'Rate Empathy, Troubleshooting and Written communication from 1 to 5 with the interviewer\u2019s name and a note. Any number of scorecards per candidate, averaged on the card and compared side by side.' },
     { title: 'Stage aging', detail: 'Every card shows its days in the current stage, and anyone over 5 days is flagged as stuck.' },
     { title: 'AI Interview Agent', detail: 'Hand the Interview stage to an agent. It runs a four-question support interview with follow-ups, scores Empathy, Troubleshooting and Written communication with the reasons shown, and saves a signed scorecard with the transcript.' },
-    { title: 'Hand-off on every candidate', detail: 'Choose who runs each candidate from their card: you, our AI agents, or our consultants. AI agents interview, book and move candidates automatically. You can switch at any stage.' },
+    { title: 'Hand-off on every candidate', detail: 'Choose who continues the interview and scheduling from each card: the customer themselves, a named recruiter on the TalentTrack team, or an AI agent. AI agents interview, book and move candidates automatically. You can switch at any stage.' },
     { title: 'Start dates and ramp', detail: 'Set expected start dates for Offer and Hired, a ramp period and a target agent count. See agents on the floor week by week and a warning when you will be short.' }
   ];
   var OWNERS = {
-    manual: { label: 'You run it', short: 'You', option: 'You run it (manual)' },
-    ai: { label: 'AI agents', short: 'AI agents', option: 'Hand off to AI agents' },
-    team: { label: 'Our team', short: 'Our team', option: 'Hand off to our team' }
+    manual: { short: 'The customer', option: 'The customer themselves' },
+    team: { short: 'TalentTrack team', option: 'TalentTrack team' },
+    ai: { short: 'An AI agent', option: 'An AI agent' }
   };
+  // TalentTrack recruiters who can take over a candidate. Replace with the real team.
+  var TEAM = ['Alex Rivera', 'Sam Ortiz', 'Dana Brooks'];
   var CRITERIA = [
     { id: 'empathy', name: 'Empathy' },
     { id: 'troubleshooting', name: 'Troubleshooting' },
@@ -763,6 +765,7 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     s.candidates[6].interviewAt = openSlot([]);   // one interview already on the calendar
     s.candidates[7].aiStatus = 'pending';         // waiting on the AI Interview Agent
     ['ai', 'ai', 'manual', 'team', 'ai', 'manual', 'team', 'ai', 'team', 'manual'].forEach(function (o, i) { s.candidates[i].owner = o; });
+    s.candidates[3].assignee = 'Alex Rivera'; s.candidates[6].assignee = 'Sam Ortiz'; s.candidates[8].assignee = 'Dana Brooks';
     s.candidates[8].acceptedDate = shift(-2);
     s.candidates[8].noticeDays = 90;             // over 60: shows the renege-risk badge
     s.candidates[8].startDate = shift(19);
@@ -784,6 +787,7 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     s.candidates.forEach(function (c) {
       if (!Array.isArray(c.scorecards)) c.scorecards = [];
       if (!OWNERS[c.owner]) c.owner = 'manual';
+      if (c.owner !== 'team' || TEAM.indexOf(c.assignee) === -1) c.assignee = c.owner === 'team' && TEAM.indexOf(c.assignee) !== -1 ? c.assignee : null;
       if (typeof c.score === 'number' && isFinite(c.score)) {
         // Older versions kept the AI Interviewer result as a single number outside the scorecards.
         var r = Math.max(1, Math.min(5, Math.round(c.score)));
@@ -1015,8 +1019,9 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     var li = el('li', { 'class': 'card' + (stuck ? ' is-stuck' : ''), 'data-id': c.id, 'data-owner': c.owner || 'manual' });
     li.appendChild(el('p', { 'class': 'c-name' }, c.name));
     li.appendChild(el('p', { 'class': 'c-role' }, c.role));
-    var own = el('label', { 'class': 'c-owner' }, 'Who runs this candidate');
-    var osel = el('select', { 'class': 'o-owner', 'aria-label': 'Who runs ' + c.name });
+    var own = el('div', { 'class': 'c-owner' });
+    own.appendChild(el('label', { 'for': 'own-' + c.id }, 'Who continues the interview and scheduling'));
+    var osel = el('select', { 'class': 'o-owner', id: 'own-' + c.id });
     Object.keys(OWNERS).forEach(function (k) {
       var o = el('option', { value: k }, OWNERS[k].option);
       if (k === (c.owner || 'manual')) o.selected = true;
@@ -1024,9 +1029,17 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     });
     osel.addEventListener('change', function () { setOwner(c.id, osel.value); });
     own.appendChild(osel);
+    if (c.owner === 'team') {
+      own.appendChild(el('label', { 'for': 'asg-' + c.id }, 'TalentTrack recruiter'));
+      var asel = el('select', { 'class': 'o-assignee', id: 'asg-' + c.id });
+      asel.appendChild(el('option', { value: '' }, 'Choose a recruiter'));
+      TEAM.forEach(function (n) { var o = el('option', { value: n }, n); if (n === c.assignee) o.selected = true; asel.appendChild(o); });
+      asel.addEventListener('change', function () { setAssignee(c.id, asel.value); });
+      own.appendChild(asel);
+    }
     var meta = el('p', { 'class': 'c-meta' });
     meta.appendChild(el('span', null, d === 0 ? 'Here since today' : plural(d, 'day') + ' in this stage'));
-    meta.appendChild(el('span', { 'class': 'badge-owner ' + (c.owner || 'manual') }, 'Run by: ' + OWNERS[c.owner || 'manual'].short));
+    meta.appendChild(el('span', { 'class': 'badge-owner ' + (c.owner || 'manual') }, ownerText(c)));
     if (stuck) meta.appendChild(el('span', { 'class': 'badge-stuck' }, 'Stuck'));
     if (isRenegeRisk(c)) meta.appendChild(el('span', { 'class': 'badge-renege' }, 'Renege risk'));
     if (typeof c.interviewAt === 'number') meta.appendChild(el('span', { 'class': 'badge-score badge-when' }, 'Interview booked ' + fmtWhen(c.interviewAt)));
@@ -1197,6 +1210,21 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
   }
 
   /* ---------- Hand-off ---------- */
+  function ownerText(c) {
+    var o = c.owner || 'manual';
+    if (o === 'team') return 'With TalentTrack team: ' + (c.assignee || 'recruiter not chosen');
+    return o === 'ai' ? 'With an AI agent' : 'With the customer';
+  }
+  function setAssignee(id, name) {
+    var c = byId(id);
+    if (!c || (name && TEAM.indexOf(name) === -1)) return;
+    var before = snapshot();
+    c.assignee = name || null;
+    if (name) logAuto('Assigned ' + c.name + ' to ' + name + ' at TalentTrack');
+    save(); render();
+    var f = $('asg-' + id); if (f) f.focus();
+    toast(name ? c.name + ' is now with ' + name + ' at TalentTrack' : 'Recruiter cleared for ' + c.name, function () { state = before; save(); render(); });
+  }
   function setOwner(id, owner) {
     var c = byId(id);
     if (!c || !OWNERS[owner] || c.owner === owner) return;
@@ -1204,7 +1232,7 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     c.owner = owner;
     var extra = '';
     if (owner === 'ai') {
-      logAuto('Handed ' + c.name + ' off to AI agents');
+      logAuto('Handed ' + c.name + ' off to an AI agent');
       if (c.stage === 'interview') {
         if (c.aiStatus !== 'done') { c.aiStatus = 'pending'; extra = '. The AI Interview Agent will interview them'; }
         if (state.auto.book && typeof c.interviewAt !== 'number') {
@@ -1214,12 +1242,12 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
       }
     } else {
       if (c.aiStatus === 'pending') delete c.aiStatus;
-      logAuto(owner === 'team' ? 'Handed ' + c.name + ' off to our team' : c.name + ' is back with you');
+      logAuto(owner === 'team' ? 'Handed ' + c.name + ' off to the TalentTrack team' : c.name + ' is back with the customer');
     }
     save(); render();
-    var card = document.querySelector('.card[data-id="' + id + '"] .o-owner');
+    var card = document.querySelector('.card[data-id="' + id + '"] ' + (owner === 'team' ? '.o-assignee' : '.o-owner'));
     if (card) card.focus();
-    toast((owner === 'manual' ? c.name + ' is now run by you' : 'Handed ' + c.name + ' off to ' + (owner === 'ai' ? 'AI agents' : 'our team')) + extra, function () { state = before; save(); render(); });
+    toast((owner === 'manual' ? c.name + ' is back with the customer' : 'Handed ' + c.name + ' off to ' + (owner === 'ai' ? 'an AI agent' : 'the TalentTrack team. Choose a recruiter on the card')) + extra, function () { state = before; save(); render(); });
   }
 
   /* ---------- Bulk add ---------- */
