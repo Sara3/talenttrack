@@ -695,7 +695,7 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
 
 <footer class="wrap site-foot">
   <p>TalentTrack is built by <strong id="team-name"></strong></p>
-  <span class="version">Version 11, 5 Oct 2026</span>
+  <span class="version">Version 12, 5 Oct 2026</span>
   <button type="button" class="btn-quiet" id="reset-btn">Reset demo data</button>
 </footer>
 
@@ -1502,16 +1502,27 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     var role = (batchRole || '').trim();
     var lines = String(text || '').split(/\r?\n/).map(function (l) { return l.trim(); }).filter(Boolean);
     var rows = [];
-    if (lines.length === 1 && lines[0].indexOf('\t') === -1) {
+    var words = function (x) { return x.split(' ').length; };
+    var isRole = function (x) { return ROLE_WORDS.test(x); };
+    if (lines.length === 1 && lines[0].indexOf('\t') !== -1) {
+      // One spreadsheet row: "Name<tab>Role", or several names copied across one row.
+      var tcells = lines[0].split('\t').map(cleanCell).filter(Boolean);
+      if (tcells.length > 1 && !tcells.slice(1).some(isRole)) tcells.forEach(function (n) { rows.push([n, '']); });
+      else if (tcells.length) rows.push([tcells[0], tcells.slice(1).join(', ')]);
+    } else if (lines.length === 1) {
       var parts = lines[0].split(/[;,]/).map(cleanCell).filter(Boolean);
-      var words = function (x) { return x.split(' ').length; };
-      if (parts.length === 2 && ROLE_WORDS.test(parts[1]) && !ROLE_WORDS.test(parts[0])) rows.push([parts[0], parts[1]]);
-      else if (strictCommas && parts.length > 1 && !parts.every(function (x) { return words(x) >= 2; })) rows.push([cleanCell(lines[0]), '']);   // "Lopez, Ana" is one person
+      if (parts.length === 1) parts = lines[0].split(/\s{2,}/).map(cleanCell).filter(Boolean);   // names separated by wide gaps
+      if (parts.length === 2 && isRole(parts[1]) && !isRole(parts[0])) rows.push([parts[0], parts[1]]);
+      else if (strictCommas && parts.length === 2 && (words(parts[0]) === 1 || words(parts[1]) === 1)) rows.push([cleanCell(lines[0]), '']);   // "Lopez, Ana" is one person
       else parts.forEach(function (n) { rows.push([n, '']); });
     } else {
       lines.forEach(function (l) {
         var cells = l.indexOf('\t') !== -1 ? l.split('\t') : l.split(/\s*[,;|]\s*|\s+[-–—]\s+/);
         cells = cells.map(cleanCell);
+        if (l.indexOf('\t') === -1 && cells.length === 2 && words(cells[0]) === 1 && words(cells[1]) === 1 && !isRole(cells[1])) {
+          rows.push([cleanCell(l), '']);   // "Lopez, Ana" on its own line is one person
+          return;
+        }
         var name = cells[0] || '';
         var r = cells.slice(1).filter(Boolean).join(', ');
         rows.push([name, r]);
