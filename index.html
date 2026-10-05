@@ -43,6 +43,11 @@ button,input,select,textarea{font:inherit;color:inherit}
 .vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
 /* header */
+.langbar{background:var(--surface);border-bottom:1px solid var(--line)}
+.langbar-inner{display:flex;gap:4px}
+.langbar button{appearance:none;background:none;border:0;border-bottom:3px solid transparent;padding:10px 14px;min-height:44px;font:inherit;font-weight:600;color:var(--muted);cursor:pointer}
+.langbar button:hover{color:var(--ink)}
+.langbar button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--focus)}
 .site-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-top:20px;padding-bottom:8px;flex-wrap:wrap}
 .brand{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:700;font-size:1.25rem;letter-spacing:-.01em;color:var(--ink);text-decoration:none}
 .brand svg{width:44px;height:16px;flex:none}
@@ -355,6 +360,13 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
 </style>
 </head>
 <body>
+
+<nav class="langbar" aria-label="Language / 言語">
+  <div class="wrap langbar-inner" role="tablist">
+    <button type="button" role="tab" id="lang-en" data-lang="en" aria-selected="true" lang="en">English</button>
+    <button type="button" role="tab" id="lang-ja" data-lang="ja" aria-selected="false" lang="ja">日本語</button>
+  </div>
+</nav>
 
 <header class="wrap site-head">
   <a class="brand" href="#top" id="top">
@@ -979,7 +991,7 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
       .map(function (c) { return c.interviewAt; });
   }
   function fmtWhen(ms) {
-    return new Date(ms).toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    return new Date(ms).toLocaleString(lang === 'ja' ? 'ja-JP' : undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
   }
   function logAuto(text) {
     state.log.unshift({ t: Date.now(), text: text });
@@ -1046,6 +1058,7 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     return null;
   }
 
+  var lang = 'en';
   var state = ensureDefaults(load() || seed());
   var onlyStuck = false;
 
@@ -2366,7 +2379,7 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     if (!state.log.length) { ul.appendChild(el('li', { 'class': 'none' }, 'Nothing yet. Move someone to Interview on the board and it will show up here.')); return; }
     state.log.slice(0, 6).forEach(function (e) {
       var li = el('li');
-      li.appendChild(el('time', null, new Date(e.t).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })));
+      li.appendChild(el('time', null, new Date(e.t).toLocaleTimeString(lang === 'ja' ? 'ja-JP' : undefined, { hour: 'numeric', minute: '2-digit' })));
       li.appendChild(el('span', null, e.text));
       ul.appendChild(li);
     });
@@ -2505,6 +2518,243 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     });
   });
 
+
+  /* ---------- Language: English and Japanese ---------- */
+  // The page is written in English. In Japanese mode every visible label, button, badge and message is
+  // swapped for its translation as it appears on screen. Candidate names, roles and notes are never changed.
+  var JA = {
+    // stages, owners, statuses
+    'Applied': '応募', 'Screen': '書類選考', 'Interview': '面接', 'Offer': '内定', 'Hired': '採用',
+    'Not started': '未着手', 'Submitted': '提出済み', 'Verified': '確認済み', 'Expired': '期限切れ', 'Not tracked': '対象外',
+    'The customer themselves': 'お客様ご自身', 'TalentTrack team': 'TalentTrackチーム', 'An AI agent': 'AIエージェント',
+    'With the customer': 'お客様が担当', 'With an AI agent': 'AIエージェントが担当', 'recruiter not chosen': '担当者未選択',
+    'CDL Class A': 'CDL クラスA', 'CDL Class B': 'CDL クラスB', 'CDL Class C': 'CDL クラスC',
+    // navigation and headings
+    'How we work': '進め方', 'Board': 'ボード', 'Scorecards': '評価シート', 'Start dates': '入社日', 'AI interview': 'AI面接',
+    'AI tools': 'AIツール', 'How it works': '使い方', 'Is it a fit': '導入の目安', 'Add-ons': '追加機能', 'Sections': 'セクション',
+    'Built by': '制作:', 'Hiring, done for you': '採用業務を代行します',
+    'We hire and interview for you, then hand off.': '採用と面接を代行し、その後お客様へ引き継ぎます。',
+    'We are hiring consultants. We run your pipeline and the interviews, and every candidate shows up on this board as we go. When someone is ready, we hand them off to your team, wherever you work.':
+      '私たちは採用コンサルタントです。選考の進行と面接を担当し、すべての候補者を随時このボードに表示します。準備が整った候補者は、お客様のチームへ引き継ぎます。',
+    'Your hiring pipeline': '採用パイプライン',
+    'This is the board we run your hiring on, and you see the same view. It is the working product, not a screenshot. Try it. Changes are saved in this browser.':
+      'これは私たちが実際に採用を進めるボードで、お客様も同じ画面をご覧いただけます。スクリーンショットではなく、実際に動く製品です。お試しください。変更はこのブラウザに保存されます。',
+    'Candidates per stage': 'ステージごとの候補者数',
+    // add form
+    'Candidate name, or paste several': '候補者名（複数貼り付けも可）', 'One name, or a list': '1名、または一覧',
+    'Role they applied for (optional)': '応募職種（任意）', 'Offer accepted date': '内定承諾日', 'Notice period (days)': '退職予告期間（日）',
+    'Add candidate': '候補者を追加', 'Add several candidates at once': '複数の候補者をまとめて追加',
+    'Paste a list from a spreadsheet, an email or a chat.': 'スプレッドシート、メール、チャットから一覧を貼り付けられます。',
+    'Candidates, one per line': '候補者（1行に1名）', 'Role for everyone else': 'その他の候補者の職種',
+    'Put a role after a comma or a tab to give that person their own role. Rows copied from a spreadsheet work as they are.': 'カンマまたはタブの後に職種を書くと、その候補者に個別の職種を設定できます。スプレッドシートからコピーした行もそのまま使えます。',
+    'Used for anyone without a role on their line. Leave it blank and they are added as "Role to confirm".': '行に職種がない候補者に使われます。空欄の場合は「職種未確認」として追加されます。',
+    'For example, Support Agent': '例: サポート担当', 'Add candidates': '候補者を追加', 'Cancel': 'キャンセル', 'Role to confirm': '職種未確認',
+    'Enter a full date, or leave it blank.': '日付をすべて入力するか、空欄のままにしてください。',
+    'Notice period must be a whole number from 0 to 180.': '退職予告期間は0〜180の整数で入力してください。',
+    // toolbar
+    'Flag as stuck when over': '停滞とみなす日数:', 'days in one stage': '日を超えて同じステージ', 'Show only stuck': '停滞中のみ表示',
+    // card
+    'Here since today': '本日から', 'Stuck': '停滞', 'Renege risk': '辞退リスク', 'Final stage': '最終ステージ', 'Remove': '削除',
+    'Who continues the interview and scheduling': '面接と日程調整の担当', 'TalentTrack recruiter': 'TalentTrack担当者', 'Choose a recruiter': '担当者を選択',
+    'No scorecards yet': '評価シートはまだありません', 'Scorecard averages': '評価シートの平均', 'Overall': '総合',
+    'Empathy': '共感力', 'Troubleshooting': '問題解決', 'Written communication': '文章コミュニケーション', 'Written': '文章',
+    'Add scorecard': '評価シートを追加', 'Add first scorecard': '最初の評価シートを追加', 'Run AI interview': 'AI面接を実施', 'Run AI interview again': 'AI面接を再実施',
+    'AI interview pending': 'AI面接待ち', 'AI interviewed': 'AI面接済み',
+    'Notice period': '退職予告期間', 'Expected joining date': '入社予定日', 'Expected start date': '勤務開始予定日',
+    'Nobody here yet.': 'まだ候補者はいません。', 'Nobody stuck here.': '停滞中の候補者はいません。',
+    // residence card and CDL
+    'Residence card': '在留カード', 'Owner for this step': 'この手続きの担当者', 'No owner yet': '担当者未設定',
+    'Nobody owns this step yet': 'この手続きの担当者がまだいません', 'Verified today': '本日確認済み', 'In this step since today': '本日からこの手続き中',
+    'Residence card expired': '在留カード期限切れ', 'Residence card stuck': '在留カード手続き停滞',
+    'Requires CDL': 'CDL（大型免許）が必要', 'CDL verified': 'CDL確認済み', 'CDL not verified': 'CDL未確認',
+    'Licence class': '免許の種類', 'Choose a class': '種類を選択', 'Licence expiry date': '免許の有効期限', 'Licence expired': '免許期限切れ', 'Licence expires today': '免許は本日で期限切れ',
+    'CDL verified. Can move to Offer.': 'CDL確認済み。内定へ移動できます。', 'CDL not verified. Cannot move to Offer.': 'CDL未確認。内定へ移動できません。',
+    'They cannot move to Offer': '内定へ移動できません', 'They can now move to Offer': '内定へ移動できるようになりました',
+    // toasts
+    'Undo': '元に戻す', 'Undone': '元に戻しました', 'Demo data reset': 'デモデータをリセットしました', 'Reset demo data': 'デモデータをリセット',
+    // scorecards section
+    'Each interviewer rates Empathy, Troubleshooting and Written communication from 1 to 5. Averages show on the candidate’s card and in the grid below, so you can compare candidates side by side.':
+      '面接官は共感力、問題解決、文章コミュニケーションを1〜5で評価します。平均は候補者カードと下の表に表示され、候補者を並べて比較できます。',
+    "Each interviewer rates Empathy, Troubleshooting and Written communication from 1 to 5. Averages show on the candidate's card and in the grid below, so you can compare candidates side by side.":
+      '面接官は共感力、問題解決、文章コミュニケーションを1〜5で評価します。平均は候補者カードと下の表に表示され、候補者を並べて比較できます。',
+    'Candidate': '候補者', 'Interviewer name': '面接官の名前', 'Note': 'メモ', 'Save scorecard': '評価シートを保存',
+    'Compare candidates': '候補者を比較', 'All scorecards': 'すべての評価シート', 'Average': '平均', 'Interviewer': '面接官', 'Stage': 'ステージ',
+    'Delete': '削除', 'Show all': 'すべて表示', 'Rate 1 to 5': '1〜5で評価', 'Transcript': '記録',
+    '5 Excellent': '5 非常に良い', '4 Good': '4 良い', '3 Fair': '3 普通', '2 Weak': '2 弱い', '1 Poor': '1 不十分',
+    'Enter the interviewer’s name.': '面接官の名前を入力してください。', 'Scorecard deleted': '評価シートを削除しました',
+    // start dates
+    'Start dates and ramp': '入社日と立ち上がり', 'Ramp (weeks)': '立ち上がり期間（週）', 'Target agent count': '目標人数', 'Needed by': '必要な時期',
+    'Week by week': '週ごと', 'Starters': '入社予定者', 'Week of': '週', 'Agents on floor': '稼働人数', 'Expected start': '開始予定', 'Set on card': 'カードで設定', 'On floor from': '稼働開始',
+    'Anyone in Offer or Hired with an expected start date counts toward your floor once their ramp is over. Set start dates on the candidate cards. If a card has no start date, the expected joining date from the notice period is used.':
+      '内定または採用の候補者で開始予定日があれば、立ち上がり期間の後に稼働人数に数えられます。開始予定日は候補者カードで設定します。未設定の場合は、退職予告期間から計算した入社予定日を使います。',
+    // AI section
+    'Beyond candidate tracking': '候補者管理のその先へ',
+    'TalentTrack also comes with an AI Recruiter, an AI Scheduler and an AI Interviewer, plus an autopilot that does the routine clicks for you. All of them act on the board above.':
+      'TalentTrackには、AIリクルーター、AIスケジューラー、AI面接官と、定型操作を代行するオートパイロットが付いています。どれも上のボードに対して動作します。',
+    'Autopilot': 'オートパイロット', 'Recent autopilot activity': '最近のオートパイロットの動作',
+    'Book an interview slot as soon as someone reaches Interview': '面接ステージに入ったらすぐに面接枠を予約する',
+    'Move a candidate to the next stage after a strong interview (4.0 or higher)': '面接評価が高い場合（4.0以上）は次のステージへ移動する',
+    'AI Interview Agent': 'AI面接エージェント', 'Candidate to interview': '面接する候補者', 'Start AI interview': 'AI面接を開始', 'Restart interview': '面接をやり直す',
+    "Candidate's answer": '候補者の回答', 'Send answer': '回答を送信', 'Fill in a sample answer': 'サンプル回答を入力', 'End interview': '面接を終了',
+    'AI Recruiter': 'AIリクルーター', 'Review my pipeline': 'パイプラインを確認',
+    'Reads the whole board, finds who has waited too long, and lines up the next move for each. You click once instead of hunting.':
+      'ボード全体を確認し、長く待っている候補者を見つけて、それぞれの次の一手を用意します。探し回る代わりにワンクリックで済みます。',
+    'AI Scheduler': 'AIスケジューラー', 'Candidate to book': '予約する候補者', 'Book next open slot': '次の空き枠を予約',
+    'Or choose a time yourself': 'または日時を指定', 'Book this time': 'この日時で予約', 'Booked interviews': '予約済みの面接',
+    'Finds the next open interview slot, books it, and hands it to your calendar.': '次の空いている面接枠を見つけて予約し、カレンダーに登録できるようにします。',
+    'No interviews booked yet.': '予約済みの面接はまだありません。', 'Add to Google Calendar': 'Googleカレンダーに追加', 'Add to Outlook': 'Outlookに追加',
+    'AI Interviewer': 'AI面接官', 'Start interview': '面接を開始',
+    'These tools run in your browser and follow hiring rules you can read on screen. Calendar links open your own Google or Outlook calendar with the interview filled in.':
+      'これらのツールはブラウザ上で動作し、画面で確認できる採用ルールに従います。カレンダーのリンクを開くと、面接の内容が入力された状態でGoogleまたはOutlookのカレンダーが開きます。',
+    'Add a candidate to the board first.': '先にボードに候補者を追加してください。', 'Agent is typing…': 'エージェントが入力中…',
+    // service, how, fit, add-ons
+    'How we work with you': 'お客様との進め方', 'We run the pipeline': '選考を進めます', 'We do the interviews': '面接を担当します', 'You choose who carries on': '引き継ぎ先を選べます',
+    'Add a candidate': '候補者を追加', 'Move them forward': '次へ進める', 'See who is stuck': '停滞を把握',
+    'Type a name and a role. They land in Applied, ready to move.': '名前と職種を入力すると、応募ステージに追加されます。',
+    'One button sends a candidate to the next stage. The dropdown sends them to any stage, including back.': 'ボタン1つで次のステージへ。ドロップダウンなら前のステージを含め、どのステージへも移動できます。',
+    'Every stage shows its count. Anyone who sits in one stage longer than your limit gets flagged.': '各ステージに人数が表示され、設定した日数を超えて同じステージにいる候補者には印が付きます。',
+    'Is TalentTrack a fit?': 'TalentTrackは合っていますか？', 'It fits if you': '向いている場合', 'Look elsewhere if you': '向いていない場合',
+    'Need one more thing?': 'もう一つ必要な機能がありますか？', 'Add-ons already built in': '組み込み済みの追加機能',
+    'Every team hires a little differently. Tell us the one thing you need on top of the basics. If it is small, we build it into TalentTrack and it keeps working for you from then on.':
+      '採用の進め方はチームごとに少しずつ異なります。基本機能に加えて必要なことを一つお知らせください。小さなものであればTalentTrackに組み込み、その後も継続してご利用いただけます。',
+    'Residence card check': '在留カードの確認',
+    'Track each candidate’s residence card step as Not started, Submitted, Verified or Expired, with an owner for the step. Anything that sits in one status for more than 5 days is flagged as stuck and counted at the top of the board.':
+      '候補者ごとに在留カードの手続きを「未着手」「提出済み」「確認済み」「期限切れ」で管理し、担当者を設定できます。同じ状態のまま5日を超えると停滞として表示され、ボード上部で件数を確認できます。',
+    'CDL check for drivers': 'ドライバーのCDL確認', 'Offer and joining dates': '内定日と入社日', 'Interview scorecards': '面接評価シート', 'Stage aging': 'ステージ滞留日数',
+    'Hand-off on every candidate': '候補者ごとの引き継ぎ', 'Start dates and ramp ': '入社日と立ち上がり',
+    'TalentTrack is built by': 'TalentTrack 制作:',
+    'candidates': '名', 'candidate': '名'
+  };
+  function jaStage(x) { return JA[x] || x; }
+  function plainDays(n) { return n + '日'; }
+  var JA_RULES = [
+    [/^(\d+) days? in this stage$/, function (m, n) { return 'このステージで' + n + '日'; }],
+    [/^(\d+) days? in this step$/, function (m, n) { return 'この手続きで' + n + '日'; }],
+    [/^(\d+) days?$/, function (m, n) { return plainDays(n); }],
+    [/^(\d+) candidates?,$/, function (m, n) { return '候補者' + n + '名、'; }],
+    [/^: (\d+) candidates?$/, function (m, n) { return '：' + n + '名'; }],
+    [/^(\d+) stuck$/, function (m, n) { return '停滞 ' + n; }],
+    [/^Renege risk: (\d+)$/, function (m, n) { return '辞退リスク: ' + n; }],
+    [/^Residence card stuck: (\d+)$/, function (m, n) { return '在留カード停滞: ' + n; }],
+    [/^CDL not verified: (\d+)$/, function (m, n) { return 'CDL未確認: ' + n; }],
+    [/^Move to (.+)$/, function (m, st) { return jaStage(st) + 'へ移動'; }],
+    [/^Move all (\d+) forward$/, function (m, n) { return n + '名をまとめて次へ移動'; }],
+    [/^Move (.+) to (Applied|Screen|Interview|Offer|Hired)$/, function (m, who, st) { return who + 'を' + jaStage(st) + 'へ移動'; }],
+    [/^Moved (.+) to (Applied|Screen|Interview|Offer|Hired)$/, function (m, who, st) { return who + 'を' + jaStage(st) + 'へ移動しました'; }],
+    [/^Moved (\d+) candidates? forward$/, function (m, n) { return '候補者' + n + '名を次のステージへ移動しました'; }],
+    [/^Go to the (.+) column$/, function (m, st) { return jaStage(st) + 'の列へ'; }],
+    [/^Stage for (.+)$/, function (m, who) { return who + 'のステージ'; }],
+    [/^Remove (.+)$/, function (m, who) { return who + 'を削除'; }],
+    [/^Removed (.+)$/, function (m, who) { return who + 'を削除しました'; }],
+    [/^Added (.+) to Applied$/, function (m, who) { return who + 'を応募に追加しました'; }],
+    [/^Add (\d+) candidates$/, function (m, n) { return '候補者' + n + '名を追加'; }],
+    [/^With TalentTrack team: (.+)$/, function (m, who) { return 'TalentTrackチームが担当: ' + (JA[who] || who); }],
+    [/^Average of (\d+) scorecards?$/, function (m, n) { return '評価シート' + n + '件の平均'; }],
+    [/^Interview booked (.+)$/, function (m, w) { return '面接予約済み ' + w; }],
+    [/^CDL not verified: (.+) cannot move to Offer until CDL verified is ticked on their card$/, function (m, who) { return 'CDL未確認: ' + who + 'は、カードの「CDL確認済み」にチェックが入るまで内定へ移動できません'; }],
+    [/^CDL not verified: (.+) cannot move to Offer because their licence has expired$/, function (m, who) { return 'CDL未確認: ' + who + 'は免許の有効期限が切れているため内定へ移動できません'; }],
+    [/^CDL verified for (.+)$/, function (m, who) { return who + 'のCDLを確認済みにしました'; }],
+    [/^CDL not verified for (.+)$/, function (m, who) { return who + 'のCDLを未確認に戻しました'; }],
+    [/^(.+) now requires a verified CDL before Offer$/, function (m, who) { return who + 'は内定前にCDLの確認が必要になりました'; }],
+    [/^(.+) no longer requires a CDL$/, function (m, who) { return who + 'はCDLが不要になりました'; }],
+    [/^Licence details saved for (.+)$/, function (m, who) { return who + 'の免許情報を保存しました'; }],
+    [/^Licence expires in (\d+) days?$/, function (m, n) { return '免許の有効期限まで' + n + '日'; }],
+    [/^Verified (\d+) days? ago$/, function (m, n) { return n + '日前に確認済み'; }],
+    [/^Stuck: (\d+) days? in (.+), over the (\d+)-day limit$/, function (m, n, st, lim) { return '停滞: 「' + (JA[st] || st) + '」のまま' + n + '日（上限' + lim + '日）'; }],
+    [/^Residence card for (.+): (.+)$/, function (m, who, st) { return who + 'の在留カード: ' + (JA[st] || st); }],
+    [/^Residence card no longer tracked for (.+)$/, function (m, who) { return who + 'の在留カードを対象外にしました'; }],
+    [/^(.+)’s residence card step is now owned by (.+)$/, function (m, who, o) { return who + 'の在留カード手続きの担当者を' + o + 'にしました'; }],
+    [/^Owner cleared for (.+)’s residence card step$/, function (m, who) { return who + 'の在留カード手続きの担当者を解除しました'; }],
+    [/^Kept (.+) out of Offer: CDL not verified$/, function (m, who) { return who + 'を内定に進めませんでした（CDL未確認）'; }],
+    [/^Blocked (.+) from (\w+): CDL not verified$/, function (m, who, st) { return who + 'の' + jaStage(st) + 'への移動を止めました（CDL未確認）'; }],
+    [/^Kept (.+) out of (\w+) after (?:a strong|the AI) interview: CDL not verified$/, function (m, who, st) { return '面接後も' + who + 'を' + jaStage(st) + 'に進めませんでした（CDL未確認）'; }]
+  ];
+  function trOne(t) {
+    if (Object.prototype.hasOwnProperty.call(JA, t)) return JA[t];
+    for (var i = 0; i < JA_RULES.length; i++) {
+      var m = t.match(JA_RULES[i][0]);
+      if (m) return JA_RULES[i][1].apply(null, m);
+    }
+    if (/\.$/.test(t)) { var q = trOne(t.slice(0, -1)); if (q != null) return q + '。'; }
+    return null;
+  }
+  function trJa(text) {
+    var core = text.trim();
+    if (!core || !/[A-Za-z]/.test(core)) return text;
+    var out = trOne(core);
+    if (out == null && /\.\s+[A-Z]/.test(core)) {
+      // Toasts join several sentences. Translate each one that has a translation.
+      var any = false;
+      out = core.split(/\.\s+(?=[A-Z])/).map(function (part) {
+        var q = trOne(part.replace(/\.$/, ''));
+        if (q != null) { any = true; return q.replace(/。$/, ''); }
+        return part;
+      }).join('。');
+      if (!any) out = null;
+    }
+    if (out == null) return text;
+    return text.match(/^\s*/)[0] + out + text.match(/\s*$/)[0];
+  }
+  var LANG_KEY = 'talenttrack.lang';
+  var LANG_ATTRS = ['placeholder', 'aria-label', 'title'];
+  function langText(n) {
+    var p = n.parentNode;
+    if (!p || p.nodeName === 'SCRIPT' || p.nodeName === 'STYLE' || p.nodeName === 'TEXTAREA') return;
+    if (n.__ja === undefined || n.nodeValue !== n.__ja) n.__en = n.nodeValue;
+    var v = lang === 'ja' ? trJa(n.__en) : n.__en;
+    n.__ja = lang === 'ja' ? v : undefined;
+    if (n.nodeValue !== v) n.nodeValue = v;
+  }
+  function langAttrs(e) {
+    LANG_ATTRS.forEach(function (a) {
+      if (!e.hasAttribute(a)) return;
+      e.__en = e.__en || {}; e.__ja = e.__ja || {};
+      var cur = e.getAttribute(a);
+      if (e.__ja[a] === undefined || cur !== e.__ja[a]) e.__en[a] = cur;
+      var v = lang === 'ja' ? trJa(e.__en[a]) : e.__en[a];
+      e.__ja[a] = lang === 'ja' ? v : undefined;
+      if (cur !== v) e.setAttribute(a, v);
+    });
+  }
+  function langTree(root) {
+    if (root.nodeType === 3) { langText(root); return; }
+    if (root.nodeType !== 1) return;
+    langAttrs(root);
+    var w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null), n, list = [];
+    while ((n = w.nextNode())) list.push(n);
+    list.forEach(langText);
+    Array.prototype.forEach.call(root.querySelectorAll('[placeholder],[aria-label],[title]'), langAttrs);
+  }
+  var langObs = window.MutationObserver ? new MutationObserver(function (recs) {
+    langObs.disconnect();
+    try {
+      recs.forEach(function (r) {
+        if (r.type === 'childList') Array.prototype.forEach.call(r.addedNodes, langTree);
+        else if (r.type === 'characterData') langText(r.target);
+        else if (r.type === 'attributes') langAttrs(r.target);
+      });
+    } catch (e) { /* a missed label must never break the board */ }
+    if (lang === 'ja') langWatch();
+  }) : null;
+  function langWatch() {
+    if (langObs) langObs.observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: LANG_ATTRS });
+  }
+  function setLang(l, remember) {
+    lang = l === 'ja' ? 'ja' : 'en';
+    if (remember) { try { window.localStorage.setItem(LANG_KEY, lang); } catch (e) { /* not saved: still switches */ } }
+    document.documentElement.lang = lang;
+    Array.prototype.forEach.call(document.querySelectorAll('.langbar [data-lang]'), function (b) {
+      b.setAttribute('aria-selected', b.getAttribute('data-lang') === lang ? 'true' : 'false');
+    });
+    if (langObs) langObs.disconnect();
+    render();
+    try { langTree(document.body); } catch (e) { /* keep the page usable */ }
+    if (lang === 'ja') langWatch();
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('.langbar [data-lang]'), function (b) {
+    b.addEventListener('click', function () { setLang(b.getAttribute('data-lang'), true); });
+  });
+
   $('team-name').textContent = TEAM_NAME;
   Array.prototype.forEach.call(document.querySelectorAll('.team-name'), function (n) { n.textContent = TEAM_NAME; });
   if (ADDONS.length) {
@@ -2519,7 +2769,9 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     $('addon-h').hidden = false;
   }
 
-  render();
+  var startLang = 'en';
+  try { if (window.localStorage.getItem(LANG_KEY) === 'ja') startLang = 'ja'; } catch (e) { /* default to English */ }
+  setLang(startLang, false);
 })();
 </script>
 </body>
