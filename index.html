@@ -473,7 +473,7 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
 
       <div class="ai-panel ai-wide" id="iv-panel">
         <h3>AI Interviewer</h3>
-        <p class="desc">Running the interview yourself? Pick a candidate and get a structured interview written for their role. Type or paste what they said, let it score the answers, and get a recommendation.</p>
+        <p class="desc">Running the interview yourself? Pick a candidate and get a structured interview written for their role. Type or paste what they said, rate Empathy, Troubleshooting and Written communication (or let it suggest ratings from your notes), and the scorecard joins the candidate's averages.</p>
         <div class="iv-pick">
           <div class="field">
             <label for="iv-cand">Candidate to interview</label>
@@ -690,6 +690,12 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     if (!parseLocalDate(s.ramp.neededBy)) { var nb = new Date(); nb.setDate(nb.getDate() + 42); s.ramp.neededBy = toYMD(nb); }
     s.candidates.forEach(function (c) {
       if (!Array.isArray(c.scorecards)) c.scorecards = [];
+      if (typeof c.score === 'number' && isFinite(c.score)) {
+        // Older versions kept the AI Interviewer result as a single number outside the scorecards.
+        var r = Math.max(1, Math.min(5, Math.round(c.score)));
+        c.scorecards.push({ id: 'scmig' + c.id, who: 'AI Interviewer', empathy: r, troubleshooting: r, written: r, note: 'Carried over from an earlier interview score of ' + c.score.toFixed(1) + '.', t: Date.now() });
+      }
+      delete c.score;
       c.scorecards = c.scorecards.filter(validScorecard);
       if (!parseLocalDate(c.startDate)) c.startDate = null;
       if (!parseLocalDate(c.acceptedDate)) c.acceptedDate = null;
@@ -836,6 +842,7 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
 
   /* ---------- Rendering ---------- */
   function render() {
+    state.candidates.forEach(function (c) { if (!Array.isArray(c.scorecards)) c.scorecards = []; });
     renderLinemap();
     renderTotals();
     renderLanes();
@@ -919,25 +926,22 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     if (stuck) meta.appendChild(el('span', { 'class': 'badge-stuck' }, 'Stuck'));
     if (isRenegeRisk(c)) meta.appendChild(el('span', { 'class': 'badge-renege' }, 'Renege risk'));
     if (typeof c.interviewAt === 'number') meta.appendChild(el('span', { 'class': 'badge-score badge-when' }, 'Interview booked ' + fmtWhen(c.interviewAt)));
-    if (typeof c.score === 'number') meta.appendChild(el('span', { 'class': 'badge-score' }, 'Interview score ' + c.score.toFixed(1) + ' / 5'));
     if (c.aiStatus === 'pending' && c.stage === 'interview') meta.appendChild(el('span', { 'class': 'badge-ai' }, 'AI interview pending'));
     if (c.aiStatus === 'done') meta.appendChild(el('span', { 'class': 'badge-ai' }, 'AI interviewed'));
     li.appendChild(meta);
 
     var avg = scoreAvgs(c);
-    if (avg) {
-      var box = el('div', { 'class': 'c-scores', 'aria-label': 'Scorecard averages' });
-      box.appendChild(el('span', { 'class': 'n' }, plural(avg.n, 'scorecard') + ', averages'));
-      CRITERIA.forEach(function (k) {
-        var cell = el('span', null, k.short || k.name);
-        cell.insertBefore(el('b', null, avg[k.id].toFixed(1)), cell.firstChild);
-        box.appendChild(cell);
-      });
-      var ov = el('span', { 'class': 'ov' }, 'Overall');
-      ov.insertBefore(el('b', null, avg.overall.toFixed(1)), ov.firstChild);
-      box.appendChild(ov);
-      li.appendChild(box);
-    }
+    var box = el('div', { 'class': 'c-scores', 'aria-label': 'Scorecard averages', 'data-avg': avg ? avg.overall.toFixed(1) : '' });
+    box.appendChild(el('span', { 'class': 'n' }, avg ? 'Average of ' + plural(avg.n, 'scorecard') : 'No scorecards yet'));
+    CRITERIA.forEach(function (k) {
+      var cell = el('span', { 'data-crit': k.id }, k.short || k.name);
+      cell.insertBefore(el('b', null, avg ? avg[k.id].toFixed(1) : DASH), cell.firstChild);
+      box.appendChild(cell);
+    });
+    var ov = el('span', { 'class': 'ov', 'data-crit': 'overall' }, 'Overall');
+    ov.insertBefore(el('b', null, avg ? avg.overall.toFixed(1) : DASH), ov.firstChild);
+    box.appendChild(ov);
+    li.appendChild(box);
     var addSc = el('button', { type: 'button', 'class': 'btn-quiet add-sc', 'aria-label': 'Add a scorecard for ' + c.name }, avg ? 'Add scorecard' : 'Add first scorecard');
     addSc.addEventListener('click', function () { openScoreForm(c.id); });
     li.appendChild(addSc);
@@ -1079,7 +1083,7 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
   /* ---------- Actions ---------- */
   function addCandidate(name, role, acceptedDate, noticeDays) {
     var c = { id: 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name: name, role: role, stage: STAGES[0].id, enteredAt: Date.now(),
-      acceptedDate: parseLocalDate(acceptedDate) ? acceptedDate : null, noticeDays: validNotice(noticeDays) ? noticeDays : null };
+      acceptedDate: parseLocalDate(acceptedDate) ? acceptedDate : null, noticeDays: validNotice(noticeDays) ? noticeDays : null, scorecards: [] };
     state.candidates.push(c);
     if (onlyStuck) { onlyStuck = false; $('only-stuck').checked = false; }
     save(); render();
@@ -1268,17 +1272,27 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     set.q.forEach(function (q, i) {
       var li = el('li');
       li.appendChild(el('span', null, q));
-      var r = el('select', { 'class': 'iv-rate', 'aria-label': 'Rating for question ' + (i + 1) });
-      r.appendChild(el('option', { value: '' }, 'Rate answer'));
-      [['5', '5 Excellent'], ['4', '4 Good'], ['3', '3 Fair'], ['2', '2 Weak'], ['1', '1 Poor']].forEach(function (o) {
-        r.appendChild(el('option', { value: o[0] }, o[1]));
-      });
-      li.appendChild(r);
       li.appendChild(el('textarea', { 'class': 'iv-notes', rows: '2', 'aria-label': 'Notes on answer ' + (i + 1), placeholder: 'Type or paste what they said' }));
-      li.appendChild(el('p', { 'class': 'iv-hint' }));
       ol.appendChild(li);
     });
     kit.appendChild(ol);
+    kit.appendChild(el('p', { 'class': 'sub-h' }, 'Scorecard'));
+    var grid = el('div', { 'class': 'sc-form iv-card' });
+    var f = el('div', { 'class': 'field' });
+    f.appendChild(el('label', { 'for': 'iv-who' }, 'Interviewer name'));
+    f.appendChild(el('input', { id: 'iv-who', type: 'text', maxlength: '60', autocomplete: 'off' }));
+    grid.appendChild(f);
+    CRITERIA.forEach(function (k) {
+      var fd = el('div', { 'class': 'field' });
+      fd.appendChild(el('label', { 'for': 'iv-' + k.id }, k.name));
+      var sel = el('select', { id: 'iv-' + k.id, 'class': 'iv-rate' });
+      sel.appendChild(el('option', { value: '' }, 'Rate 1 to 5'));
+      [['5', '5 Excellent'], ['4', '4 Good'], ['3', '3 Fair'], ['2', '2 Weak'], ['1', '1 Poor']].forEach(function (o) { sel.appendChild(el('option', { value: o[0] }, o[1])); });
+      fd.appendChild(sel);
+      grid.appendChild(fd);
+    });
+    kit.appendChild(grid);
+    kit.appendChild(el('p', { 'class': 'iv-hint', id: 'iv-hint' }));
     var row = el('div', { 'class': 'btn-row' });
     var autoBtn = el('button', { type: 'button', 'class': 'btn btn-sm btn-ghost', id: 'iv-auto' }, 'Score from notes');
     autoBtn.addEventListener('click', scoreFromNotes);
@@ -1290,34 +1304,48 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     if (first) first.focus();
   }
 
+  function ivNotes() {
+    return Array.prototype.map.call(document.querySelectorAll('#iv-kit .iv-notes'), function (t) { return t.value.trim(); });
+  }
   function scoreFromNotes() {
-    var any = false;
-    Array.prototype.forEach.call(document.querySelectorAll('#iv-kit .iv-q li'), function (li) {
-      var hint = li.querySelector('.iv-hint');
-      var sug = suggestFromNotes(li.querySelector('.iv-notes').value);
-      if (!sug) { hint.textContent = 'No notes for this answer. Rate it by hand.'; return; }
-      any = true;
-      li.querySelector('.iv-rate').value = String(sug.score);
-      hint.textContent = 'Suggested ' + sug.score + ' of 5. Found: ' + (sug.found.length ? sug.found.join(', ') : 'none of the four checks') + '.' +
-        (sug.missing.length ? ' Missing: ' + sug.missing.join(', ') + '.' : '') + ' Change the rating if you disagree.';
+    var all = ivNotes().filter(Boolean).join('\n');
+    if (!all) { $('iv-err').textContent = 'Type or paste notes on at least one answer first.'; return; }
+    $('iv-err').textContent = '';
+    var lines = [];
+    CRITERIA.forEach(function (k) {
+      var r = checksFor(k.id, all);
+      $('iv-' + k.id).value = String(r.score);
+      lines.push(k.name + ' ' + r.score + ': found ' + (r.found.join(', ') || 'none of the checks') + '.');
     });
-    $('iv-err').textContent = any ? '' : 'Type or paste notes on at least one answer first.';
+    $('iv-hint').textContent = 'Suggested from your notes. ' + lines.join(' ') + ' Change any rating you disagree with.';
   }
 
   function saveScorecard() {
     var c = byId(ivCandId);
     if (!c) { $('iv-kit').textContent = ''; ivCandId = null; return; }
-    var rates = Array.prototype.map.call(document.querySelectorAll('#iv-kit .iv-rate'), function (r) { return parseInt(r.value, 10); });
-    if (rates.some(isNaN)) { $('iv-err').textContent = 'Rate all ' + rates.length + ' answers before saving.'; return; }
+    var who = $('iv-who').value.trim();
+    if (!who) { $('iv-err').textContent = 'Enter the interviewer’s name.'; $('iv-who').focus(); return; }
+    var card = { id: 'sc' + Date.now().toString(36) + 'iv', who: who, t: Date.now() };
+    for (var i = 0; i < CRITERIA.length; i++) {
+      var v = parseInt($('iv-' + CRITERIA[i].id).value, 10);
+      if (!validInt(v, 1, 5)) { $('iv-err').textContent = 'Rate ' + CRITERIA[i].name + ' from 1 to 5, or click Score from notes.'; $('iv-' + CRITERIA[i].id).focus(); return; }
+      card[CRITERIA[i].id] = v;
+    }
     $('iv-err').textContent = '';
-    var avg = Math.round(rates.reduce(function (a, b) { return a + b; }, 0) / rates.length * 10) / 10;
-    c.score = avg;
-    ivResult = { id: c.id, name: c.name, avg: avg, level: avg >= 4 ? 'strong' : avg >= 3 ? 'mixed' : 'weak', autoMoved: null };
+    var qs = Array.prototype.map.call(document.querySelectorAll('#iv-kit .iv-q li > span'), function (x) { return x.textContent; });
+    var notes = ivNotes();
+    card.transcript = [];
+    qs.forEach(function (q, i) { card.transcript.push({ from: 'agent', text: q }); if (notes[i]) card.transcript.push({ from: 'cand', text: notes[i] }); });
+    card.note = notes.filter(Boolean).length ? 'Structured interview. Notes on ' + plural(notes.filter(Boolean).length, 'answer') + ' in the transcript.' : 'Structured interview.';
+    c.scorecards.push(card);
+    detailId = c.id;
+    var own = (card.empathy + card.troubleshooting + card.written) / 3;
+    ivResult = { id: c.id, name: c.name, avg: own, level: own >= 4 ? 'strong' : own >= 3 ? 'mixed' : 'weak', autoMoved: null };
     if (ivResult.level === 'strong' && state.auto.advance) {
       var next = STAGES[stageIndex(c.stage) + 1];
       if (next) {
         c.stage = next.id; c.enteredAt = Date.now();
-        logAuto('Moved ' + c.name + ' to ' + next.name + ' after a ' + avg.toFixed(1) + ' interview');
+        logAuto('Moved ' + c.name + ' to ' + next.name + ' after a ' + own.toFixed(1) + ' interview');
         afterStageChange(c);
         ivResult.autoMoved = next.name;
       }
@@ -1326,15 +1354,21 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     $('iv-kit').textContent = '';
     save(); render();
     $('iv-result').focus();
-    toast('Scorecard saved for ' + c.name + (ivResult.autoMoved ? '. Autopilot moved them to ' + ivResult.autoMoved : ''));
+    toast('Scorecard saved for ' + c.name + '. New average ' + scoreAvgs(c).overall.toFixed(1) + (ivResult.autoMoved ? '. Autopilot moved them to ' + ivResult.autoMoved : ''));
   }
 
+  function avgLine(c) {
+    var a = scoreAvgs(c);
+    if (!a) return '';
+    return c.name + '’s average across ' + plural(a.n, 'scorecard') + ' is now ' + a.overall.toFixed(1) + ' (' + CRITERIA.map(function (k) { return (k.short || k.name) + ' ' + a[k.id].toFixed(1); }).join(', ') + ').';
+  }
   function renderIvResult() {
     var out = $('iv-result');
     out.textContent = '';
     if (!ivResult) return;
     var c = byId(ivResult.id);
     out.appendChild(el('p', null, 'Scorecard saved for ' + ivResult.name + ': ' + ivResult.avg.toFixed(1) + ' out of 5.'));
+    if (c) out.appendChild(el('p', { 'class': 'rec-summary' }, avgLine(c)));
     var verdicts = {
       strong: 'Recommendation: strong interview. Move them forward.',
       mixed: 'Recommendation: mixed interview. Book a second conversation before you decide.',
@@ -1548,7 +1582,7 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     $('sf-who').value = ''; $('sf-note').value = '';
     CRITERIA.forEach(function (k) { $('sf-' + k.id).value = ''; });
     save(); render();
-    toast('Scorecard from ' + who + ' saved for ' + c.name);
+    toast('Scorecard from ' + who + ' saved for ' + c.name + '. New average ' + scoreAvgs(c).overall.toFixed(1));
   }
   function deleteScorecard(cid, sid) {
     var c = byId(cid);
@@ -1832,6 +1866,7 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
       ul.appendChild(li);
     });
     out.appendChild(ul);
+    out.appendChild(el('p', { 'class': 'rec-summary' }, avgLine(c)));
     out.appendChild(el('p', { 'class': 'iv-verdict' }, avg >= 4 ? 'Recommendation: strong interview. Move them forward.' : avg >= 3 ? 'Recommendation: mixed interview. Book a second conversation before you decide.' : 'Recommendation: weak interview. Do not move them forward.'));
     if (moved) out.appendChild(el('p', null, 'Autopilot moved ' + c.name + ' to ' + moved + '.'));
     out.appendChild(el('p', { 'class': 'ai-note' }, 'Each criterion starts at 1 and gains a point for every check the answers meet, up to 5. A person should review the transcript before making a final decision.'));
