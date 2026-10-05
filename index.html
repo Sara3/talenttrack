@@ -119,6 +119,19 @@ button,input,select,textarea{font:inherit;color:inherit}
 .c-role{color:var(--muted);font-size:.92rem;overflow-wrap:anywhere}
 .c-meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:.82rem;color:var(--muted);margin:4px 0 8px}
 .badge-stuck{background:var(--stuck-bg);color:var(--stuck);font-weight:700;padding:1px 8px;border-radius:999px}
+.badge-rc{background:var(--stuck-bg);color:var(--stuck);font-weight:700;padding:1px 8px;border-radius:999px;border:1px solid var(--stuck)}
+.badge-cdl{background:var(--risk);color:var(--on-risk);font-weight:700;padding:1px 8px;border-radius:999px}
+.badge-ok{background:var(--sunken);color:var(--ink);font-weight:700;padding:1px 8px;border-radius:999px}
+.c-checks{display:grid;gap:8px;margin:0 0 8px}
+.chk{display:grid;gap:4px;padding:8px;border:1.5px solid var(--line);border-radius:10px;font-size:.78rem;font-weight:600;color:var(--muted);min-width:0}
+.chk select,.chk input[type="date"]{height:34px;padding:0 6px;border:1.5px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font-size:.85rem;font-weight:600;min-width:0;width:100%}
+.chk.is-stuck,.chk.is-bad{border-color:var(--stuck);background:var(--stuck-bg)}
+.chk-line{margin:0;color:var(--ink);font-weight:600;font-size:.8rem}
+.chk.is-stuck .chk-line,.chk.is-bad .chk-line{color:var(--stuck);font-weight:700}
+.chk-tick{display:flex;align-items:center;gap:8px;color:var(--ink);font-size:.85rem}
+.chk-tick input{width:18px;height:18px;flex:none;accent-color:var(--primary)}
+.chk-tick.cdl-ok{font-weight:700}
+.c-block{margin:0 0 8px;padding:8px 10px;border-radius:8px;background:var(--risk);color:var(--on-risk);font-weight:700;font-size:.85rem;line-height:1.3}
 .card .btn{height:38px;padding:0 10px;font-size:.9rem;white-space:normal;line-height:1.15}
 .c-final{font-size:.85rem;color:var(--muted);height:38px;display:flex;align-items:center}
 .c-row{display:flex;gap:6px;margin-top:6px;align-items:center}
@@ -434,6 +447,8 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
       <div class="totals-wrap">
         <p class="totals" id="totals" tabindex="-1"></p>
         <p class="renege-total" id="renege-total"></p>
+        <p class="renege-total" id="rc-total"></p>
+        <p class="renege-total" id="cdl-total"></p>
       </div>
       <label class="tool">Flag as stuck when over
         <input type="number" id="stuck-days" min="1" max="90" step="1" inputmode="numeric">
@@ -668,7 +683,7 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
 
 <footer class="wrap site-foot">
   <p>TalentTrack is built by <strong id="team-name"></strong></p>
-  <span class="version">Version 10, 5 Oct 2026</span>
+  <span class="version">Version 11, 5 Oct 2026</span>
   <button type="button" class="btn-quiet" id="reset-btn">Reset demo data</button>
 </footer>
 
@@ -692,6 +707,8 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
   ];
   // Customer add-ons that have shipped. Each entry shows in the Add-ons section.
   var ADDONS = [
+    { title: 'Residence card check', detail: 'Track each candidate\u2019s residence card step as Not started, Submitted, Verified or Expired, with an owner for the step. Anything that sits in one status for more than 5 days is flagged as stuck and counted at the top of the board.' },
+    { title: 'CDL check for drivers', detail: 'Anyone whose role mentions driver, CDL or truck, or who has Requires CDL ticked, cannot move to Offer until CDL verified is ticked on their card. Every route into Offer is blocked, including the AI tools and undo. Licences that have expired or expire within 30 days are flagged.' },
     { title: 'Offer and joining dates', detail: 'Record the offer accepted date and notice period on any candidate. TalentTrack works out the expected joining date and flags renege risk when the notice period is over 60 days.' },
     { title: 'Interview scorecards', detail: 'Rate Empathy, Troubleshooting and Written communication from 1 to 5 with the interviewer\u2019s name and a note. Any number of scorecards per candidate, averaged on the card and compared side by side.' },
     { title: 'Stage aging', detail: 'Every card shows its days in the current stage, and anyone over 5 days is flagged as stuck.' },
@@ -713,6 +730,24 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
   ];
   var NOTICE_MAX = 180;          // longest notice period accepted, in days
   var RENEGE_OVER = 60;          // notice periods longer than this are flagged
+  // Residence card (zairyu card) check for hires in Japan. All names and data are made-up samples.
+  var RC_STATUSES = [
+    { id: 'notstarted', name: 'Not started' },
+    { id: 'submitted', name: 'Submitted' },
+    { id: 'verified', name: 'Verified' },
+    { id: 'expired', name: 'Expired' }
+  ];
+  var RC_STUCK_OVER = 5;         // days in one residence-card status before it is flagged as stuck
+  var RC_OWNERS = ['Yuki Tanaka (HR operations)', 'Kenji Sato (HR operations)'].concat(TEAM);
+  // Driver licence check. A driver cannot reach Offer until their CDL is verified.
+  var LIC_CLASSES = [
+    { id: 'cdl-a', name: 'CDL Class A' },
+    { id: 'cdl-b', name: 'CDL Class B' },
+    { id: 'cdl-c', name: 'CDL Class C' }
+  ];
+  var LIC_SOON = 30;             // flag a licence that expires within this many days
+  var DRIVER_ROLE = /driver|cdl|truck/i;
+  var DEMO_REV = 11;             // bump to add new sample candidates to boards saved by older versions
 
   var STORAGE_KEY = 'talenttrack.v2';
   var DAY = 86400000;
@@ -772,7 +807,30 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     s.candidates[9].acceptedDate = shift(-20);
     s.candidates[9].noticeDays = 30;
     s.candidates[9].startDate = shift(10);
+    s.candidates = s.candidates.concat(demoChecks());
+    s.demoRev = DEMO_REV;
     return s;
+  }
+  // Sample candidates for the residence card and CDL checks. Made-up people and data.
+  function demoChecks() {
+    var now = Date.now();
+    var today = new Date(); today.setHours(0, 0, 0, 0);
+    function shift(days) { return toYMD(new Date(today.getFullYear(), today.getMonth(), today.getDate() + days)); }
+    function mk(id, name, role, stage, days, extra) {
+      var c = { id: id, name: name, role: role, stage: stage, enteredAt: now - days * DAY - 3600000, scorecards: [], owner: 'manual' };
+      Object.keys(extra).forEach(function (k) { c[k] = extra[k]; });
+      return c;
+    }
+    return [
+      mk('seedjp0', 'Nguyen Thi Lan', 'Front Desk Associate', 'screen', 2, { rcStatus: 'notstarted', rcOwner: RC_OWNERS[0], rcSince: now - 8 * DAY - 3600000 }),
+      mk('seedjp1', 'Maria Santos', 'Front Desk Associate', 'interview', 1, { rcStatus: 'submitted', rcOwner: RC_OWNERS[1], rcSince: now - 2 * DAY }),
+      mk('seedjp2', 'Arjun Mehta', 'Housekeeping Lead', 'interview', 3, { rcStatus: 'submitted', rcOwner: RC_OWNERS[0], rcSince: now - 7 * DAY - 3600000 }),
+      mk('seedjp3', 'Siti Rahma', 'Housekeeping Staff', 'offer', 1, { rcStatus: 'verified', rcOwner: RC_OWNERS[1], rcSince: now - 4 * DAY }),
+      mk('seedjp4', 'Bui Van Duc', 'Kitchen Staff', 'applied', 1, { rcStatus: 'expired', rcOwner: null, rcSince: now - DAY - 3600000 }),
+      mk('seeddr0', 'Jake Turner', 'Delivery Driver', 'interview', 2, { owner: 'ai', aiStatus: 'pending', licClass: 'cdl-b', licExpiry: shift(400), licVerified: false }),
+      mk('seeddr1', 'Colin Murphy', 'Truck Driver', 'interview', 4, { licClass: 'cdl-a', licExpiry: shift(20), licVerified: true }),
+      mk('seeddr2', 'Rosa Diaz', 'Moving Crew Driver', 'screen', 1, { licClass: 'cdl-b', licExpiry: shift(-12), licVerified: false })
+    ];
   }
   function ensureDefaults(s) {
     if (!s.auto || typeof s.auto !== 'object') s.auto = {};
@@ -798,8 +856,66 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
       if (!parseLocalDate(c.startDate)) c.startDate = null;
       if (!parseLocalDate(c.acceptedDate)) c.acceptedDate = null;
       if (!validNotice(c.noticeDays)) c.noticeDays = null;
+      if (!rcStatusOf(c.rcStatus)) c.rcStatus = null;
+      if (c.rcStatus && (typeof c.rcSince !== 'number' || !isFinite(c.rcSince))) c.rcSince = Date.now();
+      if (RC_OWNERS.indexOf(c.rcOwner) === -1) c.rcOwner = null;
+      if (!licClassOf(c.licClass)) c.licClass = null;
+      if (!parseLocalDate(c.licExpiry)) c.licExpiry = null;
+      c.licVerified = c.licVerified === true;
+      if (typeof c.needsCdl !== 'boolean') delete c.needsCdl;
     });
+    if (!(s.demoRev >= DEMO_REV)) {
+      // Boards saved by an older version get the new sample candidates once, keeping everything else.
+      var have = {};
+      s.candidates.forEach(function (c) { have[c.id] = true; });
+      demoChecks().forEach(function (c) { if (!have[c.id]) s.candidates.push(c); });
+      s.demoRev = DEMO_REV;
+    }
+    holdDrivers(s);
     return s;
+  }
+
+  /* ---------- Residence card and CDL checks ---------- */
+  function rcStatusOf(id) { for (var i = 0; i < RC_STATUSES.length; i++) if (RC_STATUSES[i].id === id) return RC_STATUSES[i]; return null; }
+  function licClassOf(id) { for (var i = 0; i < LIC_CLASSES.length; i++) if (LIC_CLASSES[i].id === id) return LIC_CLASSES[i]; return null; }
+  function rcDays(c) { return c.rcStatus ? Math.max(0, Math.floor((Date.now() - c.rcSince) / DAY)) : 0; }
+  function isRcStuck(c) { return !!c.rcStatus && c.rcStatus !== 'verified' && rcDays(c) > RC_STUCK_OVER; }
+  function isDriver(c) { return typeof c.needsCdl === 'boolean' ? c.needsCdl : DRIVER_ROLE.test(c.role || ''); }
+  function licDaysLeft(c) {
+    var d = parseLocalDate(c.licExpiry);
+    if (!d) return null;
+    var t = new Date(); t.setHours(0, 0, 0, 0);
+    return Math.round((d.getTime() - t.getTime()) / DAY);
+  }
+  function licExpired(c) { var n = licDaysLeft(c); return n !== null && n < 0; }
+  function licFlag(c) {
+    if (!isDriver(c)) return '';
+    var n = licDaysLeft(c);
+    if (n === null || n > LIC_SOON) return '';
+    if (n < 0) return 'Licence expired';
+    return n === 0 ? 'Licence expires today' : 'Licence expires in ' + plural(n, 'day');
+  }
+  // A driver may only be at Offer or later once their CDL is verified and not expired.
+  function cdlOk(c) { return !isDriver(c) || (c.licVerified === true && !licExpired(c)); }
+  function cdlBlocked(c, stageId) {
+    var off = stageIndex('offer');
+    return off !== -1 && stageIndex(stageId) >= off && !cdlOk(c);
+  }
+  function cdlMsg(c) {
+    return 'CDL not verified: ' + c.name + ' cannot move to Offer' + (licExpired(c) ? ' because their licence has expired' : ' until CDL verified is ticked on their card');
+  }
+  // Safety net behind every route (buttons, dropdown, AI tools, undo): no unverified driver stays at Offer or later.
+  function holdDrivers(s) {
+    var off = stageIndex('offer'), held = [];
+    if (off < 1) return held;
+    s.candidates.forEach(function (c) {
+      if (stageIndex(c.stage) >= off && !cdlOk(c)) {
+        c.stage = STAGES[off - 1].id;
+        c.enteredAt = Date.now();
+        held.push(c);
+      }
+    });
+    return held;
   }
 
   /* ---------- Offer accepted date, notice period, expected joining date ---------- */
@@ -905,7 +1021,14 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
       return validState(s) ? s : null;
     } catch (e) { return null; }
   }
+  var heldNote = null;
   function save() {
+    var held = holdDrivers(state);
+    if (held.length) {
+      held.forEach(function (c) { logAuto('Kept ' + c.name + ' out of Offer: CDL not verified'); });
+      heldNote = held.map(cdlMsg).join('. ');
+      window.setTimeout(function () { if (heldNote) toast(''); }, 0);
+    }
     try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) { /* storage unavailable: keep working in memory */ }
   }
   function snapshot() { return JSON.parse(JSON.stringify(state)); }
@@ -984,6 +1107,16 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     r.textContent = 'Renege risk: ' + risk;
     r.className = 'renege-total' + (risk ? ' is-risk' : '');
     r.setAttribute('data-count', String(risk));
+    var rcs = state.candidates.filter(isRcStuck).length;
+    var q = $('rc-total');
+    q.textContent = 'Residence card stuck: ' + rcs;
+    q.className = 'renege-total' + (rcs ? ' is-risk' : '');
+    q.setAttribute('data-count', String(rcs));
+    var cd = state.candidates.filter(function (c) { return !cdlOk(c); }).length;
+    var k = $('cdl-total');
+    k.textContent = 'CDL not verified: ' + cd;
+    k.className = 'renege-total' + (cd ? ' is-risk' : '');
+    k.setAttribute('data-count', String(cd));
   }
 
   function renderLanes() {
@@ -991,7 +1124,7 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     host.textContent = '';
     STAGES.forEach(function (s) {
       var all = inStage(s.id);
-      var shown = onlyStuck ? all.filter(isStuck) : all;
+      var shown = onlyStuck ? all.filter(function (c) { return isStuck(c) || isRcStuck(c); }) : all;
       var lane = el('section', { 'class': 'lane', style: '--stage:' + s.color, 'data-stage': s.id, 'aria-label': s.name + ', ' + plural(all.length, 'candidate') });
       var h = el('h3');
       h.appendChild(el('span', { 'class': 'dot', 'aria-hidden': 'true' }));
@@ -1042,11 +1175,18 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     meta.appendChild(el('span', { 'class': 'badge-owner ' + (c.owner || 'manual') }, ownerText(c)));
     if (stuck) meta.appendChild(el('span', { 'class': 'badge-stuck' }, 'Stuck'));
     if (isRenegeRisk(c)) meta.appendChild(el('span', { 'class': 'badge-renege' }, 'Renege risk'));
+    if (c.rcStatus === 'expired') meta.appendChild(el('span', { 'class': 'badge-rc' }, 'Residence card expired'));
+    if (isRcStuck(c)) meta.appendChild(el('span', { 'class': 'badge-rc' }, 'Residence card stuck'));
+    if (!cdlOk(c)) meta.appendChild(el('span', { 'class': 'badge-cdl' }, 'CDL not verified'));
+    else if (isDriver(c)) meta.appendChild(el('span', { 'class': 'badge-ok' }, 'CDL verified'));
+    if (licFlag(c)) meta.appendChild(el('span', { 'class': 'badge-rc' }, licFlag(c)));
     if (typeof c.interviewAt === 'number') meta.appendChild(el('span', { 'class': 'badge-score badge-when' }, 'Interview booked ' + fmtWhen(c.interviewAt)));
     if (c.aiStatus === 'pending' && c.stage === 'interview') meta.appendChild(el('span', { 'class': 'badge-ai' }, 'AI interview pending'));
     if (c.aiStatus === 'done') meta.appendChild(el('span', { 'class': 'badge-ai' }, 'AI interviewed'));
     li.appendChild(meta);
+    if (cdlAlertId === c.id && !cdlOk(c)) li.appendChild(el('p', { 'class': 'c-block', role: 'alert' }, cdlMsg(c) + '.'));
     li.appendChild(own);
+    li.appendChild(workChecksFor(c));
 
     var avg = scoreAvgs(c);
     var box = el('div', { 'class': 'c-scores', 'aria-label': 'Scorecard averages', 'data-avg': avg ? avg.overall.toFixed(1) : '' });
@@ -1176,6 +1316,97 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     input.setAttribute('aria-invalid', r.ok ? 'false' : 'true');
     li.querySelector('.o-err').textContent = r.ok ? '' : NOTICE_MSG;
     save(); showOffer(li, c); renderTotals(); safely(renderRamp);
+  }
+
+  function workChecksFor(c) {
+    var box = el('div', { 'class': 'c-checks' });
+    var rc = el('div', { 'class': 'chk chk-rc' + (isRcStuck(c) ? ' is-stuck' : '') + (c.rcStatus === 'expired' ? ' is-bad' : ''), 'data-rc': c.rcStatus || 'none' });
+    rc.appendChild(el('label', { 'for': 'rc-' + c.id }, 'Residence card'));
+    var rs = el('select', { id: 'rc-' + c.id, 'class': 'rc-status' });
+    rs.appendChild(el('option', { value: '' }, 'Not tracked'));
+    RC_STATUSES.forEach(function (x) { var o = el('option', { value: x.id }, x.name); if (x.id === c.rcStatus) o.selected = true; rs.appendChild(o); });
+    rs.addEventListener('change', function () { setRcStatus(c.id, rs.value); });
+    rc.appendChild(rs);
+    if (c.rcStatus) {
+      rc.appendChild(el('label', { 'for': 'rco-' + c.id }, 'Owner for this step'));
+      var ro = el('select', { id: 'rco-' + c.id, 'class': 'rc-owner' });
+      ro.appendChild(el('option', { value: '' }, 'No owner yet'));
+      RC_OWNERS.forEach(function (n) { var o = el('option', { value: n }, n); if (n === c.rcOwner) o.selected = true; ro.appendChild(o); });
+      ro.addEventListener('change', function () { setRcOwner(c.id, ro.value); });
+      rc.appendChild(ro);
+      var d = rcDays(c);
+      var line;
+      if (c.rcStatus === 'verified') line = d === 0 ? 'Verified today' : 'Verified ' + plural(d, 'day') + ' ago';
+      else if (isRcStuck(c)) line = 'Stuck: ' + plural(d, 'day') + ' in ' + rcStatusOf(c.rcStatus).name + ', over the ' + RC_STUCK_OVER + '-day limit';
+      else line = d === 0 ? 'In this step since today' : plural(d, 'day') + ' in this step';
+      rc.appendChild(el('p', { 'class': 'chk-line', 'data-rc-line': '' }, line));
+      if (!c.rcOwner) rc.appendChild(el('p', { 'class': 'chk-line' }, 'Nobody owns this step yet'));
+    }
+    box.appendChild(rc);
+
+    var drv = isDriver(c);
+    var lic = el('div', { 'class': 'chk chk-lic' + (drv && !cdlOk(c) ? ' is-bad' : '') });
+    var nl = el('label', { 'class': 'chk-tick' });
+    var nIn = el('input', { type: 'checkbox', id: 'cdl-need-' + c.id, 'class': 'cdl-need' });
+    nIn.checked = drv;
+    nIn.addEventListener('change', function () { setLic(c.id, 'needsCdl', nIn.checked, 'cdl-need-'); });
+    nl.appendChild(nIn); nl.appendChild(el('span', null, 'Requires CDL'));
+    lic.appendChild(nl);
+    if (drv) {
+      var vl = el('label', { 'class': 'chk-tick' + (c.licVerified ? ' cdl-ok' : '') });
+      var vIn = el('input', { type: 'checkbox', id: 'cdl-ver-' + c.id, 'class': 'cdl-verified' });
+      vIn.checked = c.licVerified === true;
+      vIn.addEventListener('change', function () { setLic(c.id, 'licVerified', vIn.checked, 'cdl-ver-'); });
+      vl.appendChild(vIn); vl.appendChild(el('span', null, 'CDL verified'));
+      lic.appendChild(vl);
+      lic.appendChild(el('label', { 'for': 'cdl-cls-' + c.id }, 'Licence class'));
+      var cs = el('select', { id: 'cdl-cls-' + c.id, 'class': 'cdl-class' });
+      cs.appendChild(el('option', { value: '' }, 'Choose a class'));
+      LIC_CLASSES.forEach(function (x) { var o = el('option', { value: x.id }, x.name); if (x.id === c.licClass) o.selected = true; cs.appendChild(o); });
+      cs.addEventListener('change', function () { setLic(c.id, 'licClass', cs.value || null, 'cdl-cls-'); });
+      lic.appendChild(cs);
+      lic.appendChild(el('label', { 'for': 'cdl-exp-' + c.id }, 'Licence expiry date'));
+      var ex = el('input', { type: 'date', id: 'cdl-exp-' + c.id, 'class': 'cdl-expiry' });
+      if (c.licExpiry) ex.value = c.licExpiry;
+      ex.addEventListener('change', function () { setLic(c.id, 'licExpiry', parseLocalDate(ex.value) ? ex.value : null, 'cdl-exp-'); });
+      lic.appendChild(ex);
+      lic.appendChild(el('p', { 'class': 'chk-line', 'data-cdl-line': '' }, cdlOk(c) ? 'CDL verified. Can move to Offer.' : 'CDL not verified. Cannot move to Offer.'));
+      if (licFlag(c)) lic.appendChild(el('p', { 'class': 'chk-line' }, licFlag(c)));
+    }
+    box.appendChild(lic);
+    return box;
+  }
+  function refocus(idPrefix, id) { var f = $(idPrefix + id); if (f) f.focus(); }
+  function setRcStatus(id, v) {
+    var c = byId(id);
+    if (!c || (v && !rcStatusOf(v))) return;
+    var before = snapshot();
+    c.rcStatus = v || null;
+    c.rcSince = Date.now();
+    if (!v) c.rcOwner = null;
+    save(); render(); refocus('rc-', id);
+    toast(v ? 'Residence card for ' + c.name + ': ' + rcStatusOf(v).name : 'Residence card no longer tracked for ' + c.name, function () { state = before; save(); render(); });
+  }
+  function setRcOwner(id, v) {
+    var c = byId(id);
+    if (!c || (v && RC_OWNERS.indexOf(v) === -1)) return;
+    var before = snapshot();
+    c.rcOwner = v || null;
+    save(); render(); refocus('rco-', id);
+    toast(v ? c.name + '\u2019s residence card step is now owned by ' + v : 'Owner cleared for ' + c.name + '\u2019s residence card step', function () { state = before; save(); render(); });
+  }
+  function setLic(id, key, v, focusPrefix) {
+    var c = byId(id);
+    if (!c) return;
+    var before = snapshot();
+    c[key] = v;
+    if (key === 'licVerified' && v) cdlAlertId = null;
+    save(); render(); refocus(focusPrefix, id);
+    var msg;
+    if (key === 'licVerified') msg = v ? (cdlOk(c) ? 'CDL verified for ' + c.name + '. They can now move to Offer' : cdlMsg(c)) : 'CDL not verified for ' + c.name + '. They cannot move to Offer';
+    else if (key === 'needsCdl') msg = v ? c.name + ' now requires a verified CDL before Offer' : c.name + ' no longer requires a CDL';
+    else msg = 'Licence details saved for ' + c.name;
+    toast(msg, function () { state = before; save(); render(); });
   }
 
   function spotlight(id) {
@@ -1326,10 +1557,20 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     toast('Added ' + plural(rows.length, 'candidate') + ' to ' + STAGES[0].name, function () { state = before; save(); render(); });
   }
 
+  var cdlAlertId = null;
   function moveCandidate(id, stageId, stay) {
     var c = byId(id);
     var idx = stageIndex(stageId);
     if (!c || idx === -1 || c.stage === stageId) return false;
+    if (cdlBlocked(c, stageId)) {
+      cdlAlertId = c.id;
+      logAuto('Blocked ' + c.name + ' from ' + STAGES[idx].name + ': CDL not verified');
+      save(); render();
+      var f = $('cdl-ver-' + c.id) || $('cdl-need-' + c.id);
+      if (!stay && f) { spotlight(id); f.focus(); }
+      toast(cdlMsg(c));
+      return false;
+    }
     c.stage = stageId;
     c.enteredAt = Date.now();
     var booked = afterStageChange(c);
@@ -1408,14 +1649,19 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     }
   }
   function moveAllStuck() {
-    var stuck = stuckList();
-    if (!stuck.length) return;
+    var all = stuckList();
+    if (!all.length) return;
+    var blocked = all.filter(function (c) { return cdlBlocked(c, STAGES[stageIndex(c.stage) + 1].id); });
+    var stuck = all.filter(function (c) { return blocked.indexOf(c) === -1; });
+    blocked.forEach(function (c) { logAuto('Blocked ' + c.name + ' from Offer: CDL not verified'); });
+    var heldMsg = blocked.length ? '. ' + blocked.map(cdlMsg).join('. ') : '';
+    if (!stuck.length) { save(); render(); $('rec-out').focus(); toast(heldMsg.slice(2)); return; }
     var before = snapshot();
     var now = Date.now();
     stuck.forEach(function (c) { c.stage = STAGES[stageIndex(c.stage) + 1].id; c.enteredAt = now; afterStageChange(c); });
     save(); render();
     $('rec-out').focus();
-    toast('Moved ' + plural(stuck.length, 'candidate') + ' forward', function () { state = before; save(); render(); });
+    toast('Moved ' + plural(stuck.length, 'candidate') + ' forward' + heldMsg, function () { state = before; save(); render(); });
   }
 
   /* ---------- AI Interviewer ---------- */
@@ -1578,7 +1824,8 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     ivResult = { id: c.id, name: c.name, avg: own, level: own >= 4 ? 'strong' : own >= 3 ? 'mixed' : 'weak', autoMoved: null };
     if (ivResult.level === 'strong' && state.auto.advance && c.owner === 'ai') {
       var next = STAGES[stageIndex(c.stage) + 1];
-      if (next) {
+      if (next && cdlBlocked(c, next.id)) { logAuto('Kept ' + c.name + ' out of ' + next.name + ' after a strong interview: CDL not verified'); heldNote = cdlMsg(c); }
+      else if (next) {
         c.stage = next.id; c.enteredAt = Date.now();
         logAuto('Moved ' + c.name + ' to ' + next.name + ' after a ' + own.toFixed(1) + ' interview');
         afterStageChange(c);
@@ -2079,7 +2326,8 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     var moved = null;
     if (avg >= 4 && state.auto.advance && c.owner === 'ai') {
       var next = STAGES[stageIndex(c.stage) + 1];
-      if (next) {
+      if (next && cdlBlocked(c, next.id)) { logAuto('Kept ' + c.name + ' out of ' + next.name + ' after the AI interview: CDL not verified'); heldNote = cdlMsg(c); }
+      else if (next) {
         c.stage = next.id; c.enteredAt = Date.now();
         logAuto('Moved ' + c.name + ' to ' + next.name + ' after a ' + avg.toFixed(1) + ' AI interview');
         afterStageChange(c);
@@ -2140,6 +2388,7 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
   /* ---------- Toast ---------- */
   var toastTimer = null, undoFn = null;
   function toast(msg, undo) {
+    if (heldNote) { msg = msg ? msg + '. ' + heldNote : heldNote; heldNote = null; }
     $('toast-msg').textContent = msg;
     undoFn = undo || null;
     $('toast-undo').hidden = !undoFn;
