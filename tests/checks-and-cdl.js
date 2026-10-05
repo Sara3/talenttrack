@@ -88,3 +88,22 @@ const SP=require('os').tmpdir()+'/';
   console.log('errors:', errs);
   await b.close();
 })();
+
+// Sabinal Freight: a tester adds their own driver and clicks straight through every stage.
+(async () => {
+  const b = await chromium.launch();
+  for (const [name, role] of [['Test Driver', ''], ['Sam Hill', 'Delivery driver'], ['Pat Lee', 'CDL-A Truck Operator']]) {
+    const pg = await b.newPage();
+    await pg.goto('file://' + require('path').resolve(__dirname, '../index.html'));
+    await pg.fill('#f-name', name); await pg.fill('#f-role', role); await pg.click('#add-btn');
+    const card = () => pg.locator('.card', { hasText: name });
+    const vis = await card().locator('.cdl-verified').isVisible();
+    for (let i = 0; i < 4; i++) { const btn = card().locator('.btn-next'); if (await btn.count()) await btn.click(); }
+    const stage = await card().evaluate(el => el.closest('.lane').dataset.stage);
+    await card().locator('.c-select').selectOption('offer');
+    const stage2 = await card().evaluate(el => el.closest('.lane').dataset.stage);
+    console.log('straight through', JSON.stringify(name), JSON.stringify(role), '| checkbox visible:', vis, '| stage after clicks:', stage, '| after dropdown:', stage2, '| toast:', await pg.textContent('#toast-msg'));
+    await pg.close();
+  }
+  await b.close();
+})();

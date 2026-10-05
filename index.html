@@ -695,7 +695,7 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
 
 <footer class="wrap site-foot">
   <p>TalentTrack is built by <strong id="team-name"></strong></p>
-  <span class="version">Version 12, 5 Oct 2026</span>
+  <span class="version">Version 13, 5 Oct 2026</span>
   <button type="button" class="btn-quiet" id="reset-btn">Reset demo data</button>
 </footer>
 
@@ -720,7 +720,7 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
   // Customer add-ons that have shipped. Each entry shows in the Add-ons section.
   var ADDONS = [
     { title: 'Residence card check', detail: 'Track each candidate\u2019s residence card step as Not started, Submitted, Verified or Expired, with an owner for the step. Anything that sits in one status for more than 5 days is flagged as stuck and counted at the top of the board.' },
-    { title: 'CDL check for drivers', detail: 'Anyone whose role mentions driver, CDL or truck, or who has Requires CDL ticked, cannot move to Offer until CDL verified is ticked on their card. Every route into Offer is blocked, including the AI tools and undo. Licences that have expired or expire within 30 days are flagged.' },
+    { title: 'CDL check for drivers', detail: 'Anyone whose role or name mentions driver, CDL or truck, or who has Requires CDL ticked, cannot move to Offer until CDL verified is ticked on their card. Every route into Offer is blocked, including the AI tools and undo. Licences that have expired or expire within 30 days are flagged.' },
     { title: 'Offer and joining dates', detail: 'Record the offer accepted date and notice period on any candidate. TalentTrack works out the expected joining date and flags renege risk when the notice period is over 60 days.' },
     { title: 'Interview scorecards', detail: 'Rate Empathy, Troubleshooting and Written communication from 1 to 5 with the interviewer\u2019s name and a note. Any number of scorecards per candidate, averaged on the card and compared side by side.' },
     { title: 'Stage aging', detail: 'Every card shows its days in the current stage, and anyone over 5 days is flagged as stuck.' },
@@ -892,7 +892,7 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
   function licClassOf(id) { for (var i = 0; i < LIC_CLASSES.length; i++) if (LIC_CLASSES[i].id === id) return LIC_CLASSES[i]; return null; }
   function rcDays(c) { return c.rcStatus ? Math.max(0, Math.floor((Date.now() - c.rcSince) / DAY)) : 0; }
   function isRcStuck(c) { return !!c.rcStatus && c.rcStatus !== 'verified' && rcDays(c) > RC_STUCK_OVER; }
-  function isDriver(c) { return typeof c.needsCdl === 'boolean' ? c.needsCdl : DRIVER_ROLE.test(c.role || ''); }
+  function isDriver(c) { return typeof c.needsCdl === 'boolean' ? c.needsCdl : DRIVER_ROLE.test((c.role || '') + ' ' + (c.name || '')); }
   function licDaysLeft(c) {
     var d = parseLocalDate(c.licExpiry);
     if (!d) return null;
