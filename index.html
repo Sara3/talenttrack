@@ -214,6 +214,10 @@ button,input,select,textarea{font:inherit;color:inherit}
 .badge-owner.ai{color:var(--s-screen)}
 .badge-owner.team{color:var(--s-offer)}
 /* bulk add */
+#f-name{width:100%;min-height:44px;padding:10px 12px;border:1.5px solid var(--line);border-radius:8px;background:var(--bg);resize:none;overflow:hidden;line-height:1.35;font-family:var(--body)}
+.f-multi{font-size:.85rem;font-weight:600;color:var(--primary)}
+.f-multi:empty{display:none}
+.version{font-size:.8rem;color:var(--muted)}
 .bulk-toggle{margin-top:10px;display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;font-size:.92rem;color:var(--muted)}
 .bulk{margin-top:12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;gap:12px}
 .bulk-grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:12px;align-items:start}
@@ -378,12 +382,13 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
 
     <form class="add-form" id="add-form" novalidate>
       <div class="field">
-        <label for="f-name">Candidate name</label>
-        <input id="f-name" name="name" type="text" maxlength="80" autocomplete="off" aria-describedby="e-name">
+        <label for="f-name">Candidate name, or paste several</label>
+        <textarea id="f-name" name="name" rows="1" autocomplete="off" spellcheck="false" aria-describedby="e-name f-multi" placeholder="One name, or a list"></textarea>
         <p class="err" id="e-name" role="alert"></p>
+        <p class="f-multi" id="f-multi" aria-live="polite"></p>
       </div>
       <div class="field">
-        <label for="f-role">Role they applied for</label>
+        <label for="f-role">Role they applied for (optional)</label>
         <input id="f-role" name="role" type="text" maxlength="80" autocomplete="off" aria-describedby="e-role">
         <p class="err" id="e-role" role="alert"></p>
       </div>
@@ -663,6 +668,7 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
 
 <footer class="wrap site-foot">
   <p>TalentTrack is built by <strong id="team-name"></strong></p>
+  <span class="version">Version 9, 5 Oct 2026</span>
   <button type="button" class="btn-quiet" id="reset-btn">Reset demo data</button>
 </footer>
 
@@ -1220,13 +1226,15 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
   var ROLE_TBD = 'Role to confirm';
   var ROLE_WORDS = /agent|lead|engineer|manager|cook|chef|driver|server|associate|designer|analyst|specialist|\brep\b|representative|cashier|assistant|supervisor|coordinator|recruiter|developer|executive|porter|dishwasher|barista|host|courier|packer|picker|nurse|teacher|clerk/i;
   function cleanCell(x) { return x.replace(/^\s*(?:[-*•]|\d+[.)])\s+/, '').replace(/\s+/g, ' ').trim(); }
-  function parseBulk(text, batchRole) {
+  function parseBulk(text, batchRole, strictCommas) {
     var role = (batchRole || '').trim();
     var lines = String(text || '').split(/\r?\n/).map(function (l) { return l.trim(); }).filter(Boolean);
     var rows = [];
     if (lines.length === 1 && lines[0].indexOf('\t') === -1) {
       var parts = lines[0].split(/[;,]/).map(cleanCell).filter(Boolean);
+      var words = function (x) { return x.split(' ').length; };
       if (parts.length === 2 && ROLE_WORDS.test(parts[1]) && !ROLE_WORDS.test(parts[0])) rows.push([parts[0], parts[1]]);
+      else if (strictCommas && parts.length > 1 && !parts.every(function (x) { return words(x) >= 2; })) rows.push([cleanCell(lines[0]), '']);   // "Lopez, Ana" is one person
       else parts.forEach(function (n) { rows.push([n, '']); });
     } else {
       lines.forEach(function (l) {
@@ -1274,14 +1282,17 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     var rows = renderBulkPreview();
     if (!rows.length) { $('b-err').textContent = 'Paste or type at least one name.'; $('b-list').focus(); return; }
     $('b-err').textContent = '';
+    $('b-list').value = ''; $('b-role').value = '';
+    closeBulk();
+    addMany(rows);
+  }
+  function addMany(rows) {
     var before = snapshot();
     var now = Date.now();
     rows.forEach(function (r, i) {
       state.candidates.push({ id: 'c' + now.toString(36) + i + Math.random().toString(36).slice(2, 5), name: r.name, role: r.role, stage: STAGES[0].id, enteredAt: now + i, acceptedDate: null, noticeDays: null, scorecards: [], owner: 'manual' });
     });
     if (onlyStuck) { onlyStuck = false; $('only-stuck').checked = false; }
-    $('b-list').value = ''; $('b-role').value = '';
-    closeBulk();
     save(); render();
     goToLane(STAGES[0].id);
     toast('Added ' + plural(rows.length, 'candidate') + ' to ' + STAGES[0].name, function () { state = before; save(); render(); });
@@ -2115,16 +2126,41 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
   });
 
   /* ---------- Wiring ---------- */
+  function nameRows() { return parseBulk($('f-name').value, $('f-role').value, true); }
+  function growName() { var n = $('f-name'); n.style.height = 'auto'; n.style.height = n.scrollHeight + 'px'; }
+  function renderNameHint() {
+    var rows = nameRows();
+    growName();
+    if (rows.length > 1) {
+      $('f-multi').textContent = rows.length + ' candidates will be added separately: ' + rows.map(function (r) { return r.name; }).join(', ') + '.';
+      $('add-btn').textContent = 'Add ' + rows.length + ' candidates';
+    } else {
+      $('f-multi').textContent = '';
+      $('add-btn').textContent = 'Add candidate';
+    }
+  }
+  $('f-name').addEventListener('input', renderNameHint);
+  $('f-role').addEventListener('input', renderNameHint);
+  $('f-name').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); $('add-btn').click(); }
+  });
   $('add-form').addEventListener('submit', function (e) {
     e.preventDefault();
     var nameEl = $('f-name'), roleEl = $('f-role');
-    var name = nameEl.value.trim(), role = roleEl.value.trim();
-    $('e-name').textContent = name ? '' : 'Enter the candidate\u2019s name.';
-    $('e-role').textContent = role ? '' : 'Enter the role they applied for.';
-    nameEl.setAttribute('aria-invalid', name ? 'false' : 'true');
-    roleEl.setAttribute('aria-invalid', role ? 'false' : 'true');
-    // Offer details are optional. Blank is fine; a filled-in value has to be valid.
+    var rows = nameRows();
+    $('e-name').textContent = rows.length ? '' : 'Enter the candidate’s name.';
+    $('e-role').textContent = '';
+    nameEl.setAttribute('aria-invalid', rows.length ? 'false' : 'true');
+    if (!rows.length) { nameEl.focus(); return; }
     var accEl = $('f-accepted'), notEl = $('f-notice');
+    if (rows.length > 1) {
+      // A pasted or typed list: every name becomes its own candidate.
+      addMany(rows);
+      nameEl.value = ''; roleEl.value = ''; renderNameHint();
+      nameEl.focus();
+      return;
+    }
+    // Offer details are optional. Blank is fine; a filled-in value has to be valid.
     var accRaw = accEl.value;
     var accOk = !(accEl.validity && accEl.validity.badInput) && (accRaw === '' || !!parseLocalDate(accRaw));
     var notice = readNotice(notEl.value);
@@ -2133,12 +2169,11 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     $('e-notice').textContent = notice.ok ? '' : NOTICE_MSG;
     accEl.setAttribute('aria-invalid', accOk ? 'false' : 'true');
     notEl.setAttribute('aria-invalid', notice.ok ? 'false' : 'true');
-    if (!name) { nameEl.focus(); return; }
-    if (!role) { roleEl.focus(); return; }
     if (!accOk) { accEl.focus(); return; }
     if (!notice.ok) { notEl.focus(); return; }
-    addCandidate(name, role, accRaw || null, notice.value);
+    addCandidate(rows[0].name, rows[0].role, accRaw || null, notice.value);
     nameEl.value = ''; roleEl.value = ''; accEl.value = ''; notEl.value = '';
+    renderNameHint();
     nameEl.focus();
   });
 
@@ -2168,15 +2203,6 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
   $('bulk').addEventListener('submit', addBulk);
   $('b-list').addEventListener('input', renderBulkPreview);
   $('b-role').addEventListener('input', renderBulkPreview);
-  // Pasting a list into the single name field opens bulk add instead of making one combined name.
-  $('f-name').addEventListener('paste', function (e) {
-    var text = (e.clipboardData || window.clipboardData) ? (e.clipboardData || window.clipboardData).getData('text') : '';
-    if (!text) return;
-    var many = /[\r\n\t]/.test(text.trim()) || text.split(/[;,]/).filter(function (x) { return x.trim(); }).length > 2;
-    if (!many) return;
-    e.preventDefault();
-    openBulk(text);
-  });
   $('ag-cand').addEventListener('change', function () { $('ag-cand').dataset.touched = '1'; });
   $('ag-start').addEventListener('click', function () { if (AG) { AG.token = null; AG = null; } startAgent(); });
   $('ag-send').addEventListener('click', agSend);
