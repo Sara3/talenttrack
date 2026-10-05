@@ -1,0 +1,1707 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TalentTrack: every candidate on one board</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Public+Sans:wght@400..700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F1F3F8; --surface:#FFFFFF; --sunken:#E6EAF2; --ink:#111A30; --muted:#566079; --line:#D0D7E5;
+  --primary:#1C2C63; --primary-hover:#2A418F; --on-primary:#FFFFFF; --focus:#3B63FF;
+  --stuck:#B3261E; --stuck-bg:#FCE9E6; --flash:#FFF1B8; --risk:#C4281C; --on-risk:#FFFFFF;
+  --s-applied:#4C6FFF; --s-screen:#0B9E9E; --s-interview:#E09A00; --s-offer:#CF3F97; --s-hired:#2B9A57;
+  --display:"Bricolage Grotesque","Avenir Next","Segoe UI",system-ui,sans-serif;
+  --body:"Public Sans","Segoe UI",system-ui,-apple-system,sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0D1322; --surface:#171F38; --sunken:#111830; --ink:#EDF0F8; --muted:#A4AEC8; --line:#2C3657;
+    --primary:#A3B5FF; --primary-hover:#BFCBFF; --on-primary:#0D1322; --focus:#A3B5FF;
+    --stuck:#FF9A8A; --stuck-bg:#3B1A17; --flash:#40390F; --risk:#FF6B5E; --on-risk:#1A0806;
+    --s-applied:#7C96FF; --s-screen:#2CC4C4; --s-interview:#F5B93A; --s-offer:#EE6DB8; --s-hired:#4CC47E;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0D1322; --surface:#171F38; --sunken:#111830; --ink:#EDF0F8; --muted:#A4AEC8; --line:#2C3657;
+  --primary:#A3B5FF; --primary-hover:#BFCBFF; --on-primary:#0D1322; --focus:#A3B5FF;
+  --stuck:#FF9A8A; --stuck-bg:#3B1A17; --flash:#40390F; --risk:#FF6B5E; --on-risk:#1A0806;
+  --s-applied:#7C96FF; --s-screen:#2CC4C4; --s-interview:#F5B93A; --s-offer:#EE6DB8; --s-hired:#4CC47E;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 16px);-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5}
+h1,h2,h3,p,ol,ul,dl,dd{margin:0}
+ol,ul{padding:0;list-style:none}
+img,svg{max-width:100%}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px;border-radius:4px}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* header */
+.site-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-top:20px;padding-bottom:8px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:700;font-size:1.25rem;letter-spacing:-.01em;color:var(--ink);text-decoration:none}
+.brand svg{width:44px;height:16px;flex:none}
+.site-nav{display:flex;gap:20px;flex-wrap:wrap}
+.site-nav a{color:var(--muted);text-decoration:none;font-weight:500;font-size:.95rem}
+.site-nav a:hover{color:var(--ink);text-decoration:underline}
+
+/* hero */
+.hero{padding-top:44px;padding-bottom:28px}
+.team-tag{font-size:.95rem;font-weight:600;color:var(--muted);margin-bottom:14px}.team-tag strong{color:var(--primary)}
+.hero h1{font-family:var(--display);font-weight:750;font-size:clamp(2.3rem,6vw,4.2rem);line-height:.98;letter-spacing:-.03em;max-width:14ch}
+.hero .lede{margin-top:18px;font-size:clamp(1.05rem,1.6vw,1.25rem);color:var(--muted);max-width:56ch}
+
+/* workspace */
+.workspace{padding-bottom:56px}
+.ws-note{color:var(--muted);font-size:.9rem;margin-bottom:20px}
+.linemap{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));margin-bottom:22px}
+.linemap li{position:relative;min-width:0}
+.station{display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;width:100%;min-width:0;padding:0;border:0;background:none;cursor:pointer}
+.station:hover .st-name{text-decoration:underline}
+.lane.spot{animation:lanespot 1.4s ease-out}
+@keyframes lanespot{from{background:var(--flash)}to{background:transparent}}
+.linemap li:not(:last-child)::after{content:"";position:absolute;top:24px;left:50%;width:100%;height:4px;background:var(--line);z-index:0}
+.ring{position:relative;z-index:1;display:grid;place-items:center;width:52px;height:52px;border-radius:50%;border:5px solid var(--stage);background:var(--surface);font-family:var(--display);font-weight:700;font-size:1.3rem;line-height:1}
+.st-name{font-weight:600;font-size:.95rem;overflow-wrap:anywhere}
+.st-stuck{font-size:.8rem;font-weight:600;color:var(--stuck);min-height:1.2em}
+
+.add-form{display:grid;grid-template-columns:repeat(4,minmax(0,1fr)) auto;gap:12px;align-items:start;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.field label{font-weight:600;font-size:.9rem}
+.field input{width:100%;height:44px;padding:0 12px;border:1.5px solid var(--line);border-radius:8px;background:var(--bg)}
+.field input[aria-invalid="true"]{border-color:var(--stuck)}
+.err{color:var(--stuck);font-size:.85rem;min-height:1.2em}
+.add-form .btn{margin-top:27px}
+.btn{height:44px;padding:0 18px;border:0;border-radius:8px;background:var(--primary);color:var(--on-primary);font-weight:600;cursor:pointer;white-space:nowrap}
+.btn:hover{background:var(--primary-hover)}
+
+.toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 24px;margin:20px 0 14px}
+.totals-wrap{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin-right:auto}
+.totals{font-weight:600}
+.renege-total{font-weight:600;font-size:.9rem;padding:2px 12px;border-radius:999px;border:1.5px solid var(--line)}
+.renege-total.is-risk{background:var(--risk);color:var(--on-risk);border-color:transparent}
+.badge-renege{background:var(--risk);color:var(--on-risk);font-weight:700;padding:1px 8px;border-radius:999px}
+.offer{display:grid;gap:4px;font-size:.82rem;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.offer div{display:flex;flex-wrap:wrap;justify-content:space-between;gap:0 8px}
+.offer dt{color:var(--muted)}
+.offer dd{font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums}
+.offer-edit{display:grid;gap:6px;margin-top:8px}
+.offer-edit label{display:grid;gap:3px;font-size:.78rem;font-weight:600;color:var(--muted)}
+.offer-edit input{width:100%;min-width:0;height:34px;padding:0 6px;border:1.5px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font-size:.85rem;font-weight:400}
+.offer-edit input[aria-invalid="true"]{border-color:var(--stuck)}
+.o-err{color:var(--stuck);font-size:.78rem}
+.o-err:empty{display:none}
+.totals .n-stuck{color:var(--stuck)}
+.tool{display:flex;align-items:center;gap:8px;font-size:.92rem;color:var(--muted)}
+.tool input[type="number"]{width:64px;height:36px;padding:0 8px;border:1.5px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)}
+.tool input[type="checkbox"]{width:18px;height:18px;accent-color:var(--primary)}
+
+.board{display:grid;grid-template-columns:repeat(5,minmax(0,1fr))}
+.lane{padding:0 10px 8px;border-left:1px solid var(--line);min-width:0}
+.lane:first-child{border-left:0;padding-left:0}
+.lane:last-child{padding-right:0}
+.lane h3{display:flex;align-items:center;gap:8px;font-family:var(--display);font-weight:700;font-size:1.05rem;padding:4px 0 12px}
+.lane h3 .dot{width:10px;height:10px;border-radius:50%;background:var(--stage);flex:none}
+.lane h3 .count{margin-left:auto;min-width:28px;padding:1px 8px;border-radius:999px;background:var(--sunken);font-family:var(--body);font-size:.85rem;text-align:center}
+.lane-list{display:grid;gap:8px}
+.lane-empty{color:var(--muted);font-size:.9rem;padding:14px 4px;border:1.5px dashed var(--line);border-radius:10px;text-align:center}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.card.is-stuck{border-color:var(--stuck)}
+.card.flash{animation:flash 1.4s ease-out}
+@keyframes flash{from{background:var(--flash)}to{background:var(--surface)}}
+.c-name{font-weight:700;line-height:1.25;overflow-wrap:anywhere}
+.c-role{color:var(--muted);font-size:.92rem;overflow-wrap:anywhere}
+.c-meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:.82rem;color:var(--muted);margin:4px 0 8px}
+.badge-stuck{background:var(--stuck-bg);color:var(--stuck);font-weight:700;padding:1px 8px;border-radius:999px}
+.card .btn{height:38px;padding:0 10px;font-size:.9rem;white-space:normal;line-height:1.15}
+.c-final{font-size:.85rem;color:var(--muted);height:38px;display:flex;align-items:center}
+.c-row{display:flex;gap:6px;margin-top:6px;align-items:center}
+.c-select{flex:1;min-width:0;height:34px;padding:0 6px;border:1.5px solid var(--line);border-radius:8px;background:var(--surface);font-size:.85rem}
+.btn-quiet{height:34px;padding:0 6px;border:0;background:none;color:var(--muted);font-size:.85rem;cursor:pointer;text-decoration:underline}
+.btn-quiet:hover{color:var(--stuck)}
+
+/* AI tools */
+.band-lede{color:var(--muted);max-width:62ch;font-size:1.05rem;margin:-14px 0 28px}
+.ai-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;align-items:start}
+.ai-panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.ai-panel h3{font-family:var(--display);font-size:1.3rem;font-weight:700}
+.ai-panel .desc{color:var(--muted)}
+.ai-panel .btn{align-self:flex-start}
+.btn-sm{height:36px;padding:0 12px;font-size:.9rem}
+.btn-ghost{background:none;border:1.5px solid var(--primary);color:var(--primary)}
+.btn-ghost:hover{background:var(--sunken)}
+.ai-out:empty{display:none}
+.ai-out{display:flex;flex-direction:column;gap:12px}
+.ai-out:focus{outline:none}
+.rec-summary{font-weight:600}
+.rec-list li,.iv-q li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.rec-list li span,.iv-q li span{overflow-wrap:anywhere}
+.iv-pick{display:flex;flex-wrap:wrap;gap:10px;align-items:end}
+.iv-pick .field{flex:1 1 220px}
+.ai-panel .field select,.iv-q select{height:44px;padding:0 8px;border:1.5px solid var(--line);border-radius:8px;background:var(--bg);min-width:0;width:100%}
+.ai-wide{grid-column:1/-1}
+.ai-auto{margin-bottom:24px}
+.auto-rules{display:grid;gap:10px}
+.auto-rules label{display:flex;gap:10px;align-items:flex-start;max-width:70ch}
+.auto-rules input{width:18px;height:18px;margin-top:3px;accent-color:var(--primary);flex:none}
+.sub-h{font-weight:700;font-size:.95rem;margin-top:4px}
+.auto-log li{padding:8px 0;border-top:1px solid var(--line);font-size:.95rem;display:flex;gap:12px}
+.auto-log time{color:var(--muted);flex:none;font-variant-numeric:tabular-nums}
+.auto-log .none,.sc-list .none{color:var(--muted)}
+.sc-list li{padding:10px 0;border-top:1px solid var(--line);display:grid;gap:4px}
+.sc-when{font-weight:600}
+.sc-actions{display:flex;flex-wrap:wrap;gap:4px 16px;align-items:center}
+.sc-actions a{color:var(--primary);font-weight:600;font-size:.9rem}
+.btn-row{display:flex;flex-wrap:wrap;gap:10px}
+.iv-notes{grid-column:1/-1;width:100%;min-height:60px;padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;background:var(--bg);resize:vertical}
+.iv-hint{grid-column:1/-1;font-size:.88rem;color:var(--muted)}
+.iv-hint:empty{display:none}
+.iv-q select{height:36px;width:auto;background:var(--surface)}
+.iv-q{counter-reset:q}
+.iv-q li{counter-increment:q}
+.iv-q li span::before{content:counter(q) ". ";font-weight:700}
+.iv-for{font-weight:600}
+.iv-verdict{font-weight:600}
+.ai-note{font-size:.9rem;color:var(--muted);margin-top:18px}
+.badge-score{background:var(--sunken);color:var(--ink);font-weight:600;padding:1px 8px;border-radius:999px}
+
+/* pitch sections */
+.band{padding-top:56px;padding-bottom:56px;border-top:1px solid var(--line)}
+.band h2{font-family:var(--display);font-weight:700;font-size:clamp(1.6rem,3vw,2.3rem);letter-spacing:-.02em;line-height:1.1;margin-bottom:28px}
+.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px;counter-reset:step}
+.steps li{counter-increment:step}
+.steps svg{display:block;width:100%;height:auto;background:var(--surface);border:1px solid var(--line);border-radius:12px;margin-bottom:16px}
+.steps h3{font-family:var(--display);font-size:1.2rem;font-weight:700;margin-bottom:6px}
+.steps h3::before{content:counter(step) ". "}
+.steps p{color:var(--muted);max-width:40ch}
+.i-surface{fill:var(--surface)} .i-box{fill:var(--bg);stroke:var(--line)} .i-cardbox{fill:var(--surface);stroke:var(--line)} .i-bg{fill:var(--bg)} .i-line{stroke:var(--line);fill:none} .i-linefill{fill:var(--line)}
+.i-ink{fill:var(--ink)} .i-muted{fill:var(--muted)} .i-primary{fill:var(--primary)}
+.i-stuckbg{fill:var(--stuck-bg)} .i-stuck{fill:var(--stuck)} .i-stuckline{stroke:var(--stuck);fill:var(--surface)}
+.i-text{font-family:var(--display);font-weight:700;fill:var(--ink)}
+.i-path{stroke:var(--muted);fill:none;stroke-width:2;stroke-dasharray:4 4}
+
+.fit{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:40px}
+.fit h3{font-family:var(--display);font-size:1.2rem;font-weight:700;margin-bottom:12px}
+.fit li{position:relative;padding:10px 0 10px 30px;border-top:1px solid var(--line);max-width:52ch}
+.fit li::before{position:absolute;left:0;top:10px;font-weight:700;width:22px;text-align:center}
+.fit .yes li::before{content:"\2713";color:var(--s-hired)}
+.fit .no li::before{content:"\2715";color:var(--stuck)}
+
+.addons p{max-width:62ch;color:var(--muted);font-size:1.05rem}
+.addons ul{margin-top:20px;max-width:62ch}
+.addons li{padding:12px 0;border-top:1px solid var(--line)}
+.addons li strong{display:block}
+
+.site-foot{border-top:1px solid var(--line);padding-top:24px;padding-bottom:32px;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;color:var(--muted);font-size:.95rem}
+.site-foot strong{color:var(--ink)}
+
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;display:flex;align-items:center;gap:14px;max-width:calc(100% - 32px);font-size:.95rem;z-index:10}
+.toast[hidden]{display:none}
+.toast button{background:none;border:0;color:inherit;font-weight:700;text-decoration:underline;cursor:pointer;padding:4px}
+
+/* scorecards + start dates */
+.sc-form{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;align-items:end;margin-bottom:28px}
+.sc-form .field select,.sc-form .field input,.ramp-controls input{height:44px;padding:0 10px;border:1.5px solid var(--line);border-radius:8px;background:var(--bg);width:100%;min-width:0}
+.sc-form .wide{grid-column:1/-1}
+.sc-form textarea{width:100%;min-height:60px;padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;background:var(--bg);resize:vertical}
+.sf-actions{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px}
+.sf-actions .err{min-height:0}
+.grid-h{margin:24px 0 10px;font-size:1rem}
+.grid-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-numeric:tabular-nums}
+.grid th,.grid td{padding:10px 12px;text-align:left;border-top:1px solid var(--line);white-space:nowrap;vertical-align:middle}
+.grid thead th{border-top:0;font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);background:var(--sunken);font-weight:600}
+.grid .num{text-align:right}
+.grid td.note-cell{white-space:normal;min-width:220px;color:var(--muted)}
+.grid tr.avg-row td{font-weight:700;background:var(--sunken)}
+.grid tr.is-sel td{background:var(--sunken)}
+.grid td.empty{color:var(--muted);white-space:normal}
+.grid .btn-quiet{height:auto;padding:2px 4px}
+.sc-hi{color:var(--s-hired);font-weight:700}
+.sc-lo{color:var(--stuck);font-weight:700}
+.c-scores{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:2px;margin:2px 0 8px;padding:8px 6px;border-radius:8px;background:var(--sunken);font-size:.72rem;text-align:center;color:var(--muted)}
+.c-scores b{display:block;font-size:.95rem;color:var(--ink);font-variant-numeric:tabular-nums}
+.c-scores .n{grid-column:1/-1;text-align:left;padding:0 2px 4px;font-size:.78rem}
+.c-scores .ov b{color:var(--primary)}
+.add-sc{align-self:flex-start;padding:0 2px;height:28px}
+.ramp-controls{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:end;margin-bottom:18px}
+.ramp-controls .field{width:190px;max-width:100%}
+.ramp-controls input{background:var(--surface)}
+.ramp-alert{padding:12px 16px;border-radius:10px;font-weight:700;margin-bottom:18px;max-width:70ch}
+.ramp-alert.short{background:var(--risk);color:var(--on-risk)}
+.ramp-alert.ok{background:var(--surface);color:var(--ink);border:2px solid var(--s-hired)}
+.bar{position:relative;height:10px;border-radius:999px;background:var(--sunken);width:160px}
+.bar i{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:var(--s-interview)}
+.bar.full i{background:var(--s-hired)}
+.grid tr.is-need td{background:var(--stuck-bg)}
+.need-tag{display:inline-block;margin-left:8px;padding:0 8px;border-radius:999px;background:var(--risk);color:var(--on-risk);font-size:.75rem;font-weight:700}
+
+@media (max-width:1000px){
+  .sc-form{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .add-form{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .add-form .btn{grid-column:1/-1;margin-top:0}
+  .board{grid-template-columns:minmax(0,1fr)}
+  .lane,.lane:first-child,.lane:last-child{border-left:0;border-top:1px solid var(--line);padding:14px 0 18px}
+  .lane-list{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+  .steps{grid-template-columns:minmax(0,1fr);max-width:480px}
+}
+@media (max-width:800px){
+  .ai-grid{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:640px){
+  .rec-list li,.iv-q li{grid-template-columns:minmax(0,1fr);gap:8px}
+  .rec-list li .btn,.iv-q select{justify-self:start}
+  .add-form{grid-template-columns:minmax(0,1fr)}
+  .sc-form{grid-template-columns:minmax(0,1fr)}
+  .add-form .btn{margin-top:0;width:100%}
+  .err{min-height:0}
+  .fit{grid-template-columns:minmax(0,1fr);gap:32px}
+  .ring{width:44px;height:44px;font-size:1.1rem;border-width:4px}
+  .linemap li:not(:last-child)::after{top:20px}
+  .st-name{font-size:.78rem}
+  .st-stuck{font-size:.72rem}
+  .hero{padding-top:28px}
+}
+@media (prefers-reduced-motion:reduce){
+  .card.flash{animation:none;outline:3px solid var(--focus)}
+  .lane.spot{animation:none;outline:3px solid var(--focus)}
+  html{scroll-behavior:auto}
+}
+</style>
+</head>
+<body>
+
+<header class="wrap site-head">
+  <a class="brand" href="#top" id="top">
+    <svg viewBox="0 0 44 16" aria-hidden="true">
+      <rect x="6" y="6.5" width="32" height="3" class="i-linefill"/>
+      <circle cx="7" cy="8" r="5.5" style="fill:var(--s-applied)"/>
+      <circle cx="22" cy="8" r="5.5" style="fill:var(--s-interview)"/>
+      <circle cx="37" cy="8" r="5.5" style="fill:var(--s-hired)"/>
+    </svg>
+    TalentTrack
+  </a>
+  <nav class="site-nav" aria-label="Sections">
+    <a href="#board">Board</a>
+    <a href="#scorecards">Scorecards</a>
+    <a href="#starts">Start dates</a>
+    <a href="#ai">AI tools</a>
+    <a href="#how">How it works</a>
+    <a href="#fit">Is it a fit</a>
+    <a href="#addons">Add-ons</a>
+  </nav>
+</header>
+
+<main>
+  <section class="wrap hero">
+    <p class="team-tag">Built by <strong class="team-name"></strong></p>
+    <h1>Every candidate on one board.</h1>
+    <p class="lede">Add a candidate in seconds, move them stage by stage with one click, and see who has been waiting too long. Score interviews side by side and see when new agents will be on the floor.</p>
+  </section>
+
+  <section class="wrap workspace" id="board" aria-labelledby="board-h">
+    <h2 class="vh" id="board-h">Your hiring pipeline</h2>
+    <p class="ws-note">This is the working product, not a screenshot. Try it. Changes are saved in this browser.</p>
+
+    <ol class="linemap" id="linemap" aria-label="Candidates per stage"></ol>
+
+    <form class="add-form" id="add-form" novalidate>
+      <div class="field">
+        <label for="f-name">Candidate name</label>
+        <input id="f-name" name="name" type="text" maxlength="80" autocomplete="off" aria-describedby="e-name">
+        <p class="err" id="e-name" role="alert"></p>
+      </div>
+      <div class="field">
+        <label for="f-role">Role they applied for</label>
+        <input id="f-role" name="role" type="text" maxlength="80" autocomplete="off" aria-describedby="e-role">
+        <p class="err" id="e-role" role="alert"></p>
+      </div>
+      <div class="field">
+        <label for="f-accepted">Offer accepted date</label>
+        <input id="f-accepted" name="accepted" type="date" aria-describedby="e-accepted">
+        <p class="err" id="e-accepted" role="alert"></p>
+      </div>
+      <div class="field">
+        <label for="f-notice">Notice period (days)</label>
+        <input id="f-notice" name="notice" type="number" min="0" max="180" step="1" inputmode="numeric" placeholder="—" aria-describedby="e-notice">
+        <p class="err" id="e-notice" role="alert"></p>
+      </div>
+      <button class="btn" type="submit" id="add-btn">Add candidate</button>
+    </form>
+
+    <div class="toolbar">
+      <div class="totals-wrap">
+        <p class="totals" id="totals" tabindex="-1"></p>
+        <p class="renege-total" id="renege-total"></p>
+      </div>
+      <label class="tool">Flag as stuck when over
+        <input type="number" id="stuck-days" min="1" max="90" step="1" inputmode="numeric">
+        days in one stage
+      </label>
+      <label class="tool"><input type="checkbox" id="only-stuck"> Show only stuck</label>
+    </div>
+
+    <div class="board" id="lanes"></div>
+  </section>
+
+  <section class="wrap band" id="scorecards" aria-labelledby="scorecards-h">
+    <h2 id="scorecards-h">Scorecards</h2>
+    <p class="band-lede">Each interviewer rates Empathy, Troubleshooting and Written communication from 1 to 5. Averages show on the candidate's card and in the grid below, so you can compare candidates side by side.</p>
+    <form class="ai-panel sc-form" id="score-form" novalidate>
+      <div class="field"><label for="sf-cand">Candidate</label><select id="sf-cand"></select></div>
+      <div class="field"><label for="sf-who">Interviewer name</label><input id="sf-who" type="text" maxlength="60" autocomplete="off"></div>
+      <div class="field"><label for="sf-empathy">Empathy</label><select id="sf-empathy" class="sf-rate"></select></div>
+      <div class="field"><label for="sf-troubleshooting">Troubleshooting</label><select id="sf-troubleshooting" class="sf-rate"></select></div>
+      <div class="field"><label for="sf-written">Written communication</label><select id="sf-written" class="sf-rate"></select></div>
+      <div class="field wide"><label for="sf-note">Note</label><textarea id="sf-note" rows="2" maxlength="500"></textarea></div>
+      <div class="sf-actions">
+        <button class="btn" type="submit" id="sf-save">Save scorecard</button>
+        <p class="err" id="sf-err" role="alert"></p>
+      </div>
+    </form>
+    <h3 class="sub-h grid-h">Compare candidates</h3>
+    <div class="grid-wrap"><table class="grid" id="cmp-grid"></table></div>
+    <h3 class="sub-h grid-h" id="detail-h">All scorecards</h3>
+    <div class="grid-wrap"><table class="grid" id="detail-grid"></table></div>
+  </section>
+
+  <section class="wrap band" id="starts" aria-labelledby="starts-h">
+    <h2 id="starts-h">Start dates and ramp</h2>
+    <p class="band-lede">Anyone in Offer or Hired with an expected start date counts toward your floor once their ramp is over. Set start dates on the candidate cards. If a card has no start date, the expected joining date from the notice period is used.</p>
+    <div class="ramp-controls">
+      <div class="field"><label for="rp-weeks">Ramp (weeks)</label><input id="rp-weeks" type="number" min="0" max="12" step="1" inputmode="numeric"></div>
+      <div class="field"><label for="rp-target">Target agent count</label><input id="rp-target" type="number" min="1" max="500" step="1" inputmode="numeric"></div>
+      <div class="field"><label for="rp-need">Needed by</label><input id="rp-need" type="date"></div>
+    </div>
+    <p class="ramp-alert" id="ramp-alert" role="status"></p>
+    <h3 class="sub-h grid-h">Week by week</h3>
+    <div class="grid-wrap"><table class="grid" id="ramp-grid"></table></div>
+    <h3 class="sub-h grid-h">Starters</h3>
+    <div class="grid-wrap"><table class="grid" id="starter-grid"></table></div>
+  </section>
+
+  <section class="wrap band" id="ai" aria-labelledby="ai-h">
+    <h2 id="ai-h">Beyond candidate tracking</h2>
+    <p class="band-lede">TalentTrack also comes with an AI Recruiter, an AI Scheduler and an AI Interviewer, plus an autopilot that does the routine clicks for you. All of them act on the board above.</p>
+
+    <div class="ai-panel ai-auto" id="auto-panel">
+      <h3>Autopilot</h3>
+      <p class="desc">Switch on the routine work you want done for you. Each rule runs the moment its trigger happens.</p>
+      <div class="auto-rules">
+        <label><input type="checkbox" id="auto-book"> <span>Book an interview slot as soon as someone reaches Interview</span></label>
+        <label><input type="checkbox" id="auto-adv"> <span>Move a candidate to the next stage after a strong interview (4.0 or higher)</span></label>
+      </div>
+      <p class="sub-h">Recent autopilot activity</p>
+      <ul class="auto-log" id="auto-log" aria-live="polite"></ul>
+    </div>
+
+    <div class="ai-grid">
+      <div class="ai-panel" id="rec-panel">
+        <h3>AI Recruiter</h3>
+        <p class="desc">Reads the whole board, finds who has waited too long, and lines up the next move for each. You click once instead of hunting.</p>
+        <button type="button" class="btn" id="rec-run">Review my pipeline</button>
+        <div class="ai-out" id="rec-out" tabindex="-1" aria-live="polite"></div>
+      </div>
+
+      <div class="ai-panel" id="sc-panel">
+        <h3>AI Scheduler</h3>
+        <p class="desc">Finds the next open interview slot, books it, and hands it to your calendar.</p>
+        <div class="field">
+          <label for="sc-cand">Candidate to book</label>
+          <select id="sc-cand"></select>
+        </div>
+        <button type="button" class="btn" id="sc-auto">Book next open slot</button>
+        <div class="field">
+          <label for="sc-when">Or choose a time yourself</label>
+          <input type="datetime-local" id="sc-when">
+        </div>
+        <button type="button" class="btn btn-ghost" id="sc-book">Book this time</button>
+        <p class="err" id="sc-err" role="alert"></p>
+        <p class="sub-h">Booked interviews</p>
+        <ul class="sc-list" id="sc-list"></ul>
+      </div>
+
+      <div class="ai-panel ai-wide" id="iv-panel">
+        <h3>AI Interviewer</h3>
+        <p class="desc">Pick a candidate and get a structured interview written for their role. Type or paste what they said, let it score the answers, and get a recommendation.</p>
+        <div class="iv-pick">
+          <div class="field">
+            <label for="iv-cand">Candidate to interview</label>
+            <select id="iv-cand"></select>
+          </div>
+          <button type="button" class="btn" id="iv-start">Start interview</button>
+        </div>
+        <p class="err" id="iv-err" role="alert"></p>
+        <div class="ai-out" id="iv-kit"></div>
+        <div class="ai-out" id="iv-result" tabindex="-1" aria-live="polite"></div>
+      </div>
+    </div>
+    <p class="ai-note">These tools run in your browser and follow hiring rules you can read on screen. Calendar links open your own Google or Outlook calendar with the interview filled in.</p>
+  </section>
+
+  <section class="wrap band" id="how" aria-labelledby="how-h">
+    <h2 id="how-h">How it works</h2>
+    <ol class="steps">
+      <li>
+        <svg viewBox="0 0 240 130" role="img" aria-label="A short form with name and role turns into a candidate card">
+          <rect x="18" y="22" width="104" height="20" rx="5" class="i-box"/>
+          <rect x="18" y="50" width="104" height="20" rx="5" class="i-box"/>
+          <rect x="18" y="82" width="70" height="24" rx="6" class="i-primary"/>
+          <rect x="26" y="29" width="46" height="6" rx="3" class="i-muted"/>
+          <rect x="26" y="57" width="62" height="6" rx="3" class="i-muted"/>
+          <path d="M128 64 H158" class="i-path"/>
+          <rect x="164" y="34" width="58" height="60" rx="8" class="i-cardbox" stroke-width="1.5"/>
+          <rect x="172" y="44" width="36" height="7" rx="3.5" class="i-ink"/>
+          <rect x="172" y="57" width="42" height="5" rx="2.5" class="i-muted"/>
+          <rect x="172" y="74" width="42" height="12" rx="4" class="i-primary"/>
+        </svg>
+        <h3>Add a candidate</h3>
+        <p>Type a name and a role. They land in Applied, ready to move.</p>
+      </li>
+      <li>
+        <svg viewBox="0 0 240 130" role="img" aria-label="A candidate card moves from one stage lane to the next">
+          <line x1="84" y1="16" x2="84" y2="114" class="i-line"/>
+          <line x1="158" y1="16" x2="158" y2="114" class="i-line"/>
+          <circle cx="46" cy="26" r="7" style="fill:var(--s-applied)"/>
+          <circle cx="121" cy="26" r="7" style="fill:var(--s-screen)"/>
+          <circle cx="196" cy="26" r="7" style="fill:var(--s-interview)"/>
+          <rect x="20" y="52" width="52" height="46" rx="7" class="i-line" stroke-dasharray="4 4" stroke-width="1.5"/>
+          <path d="M60 60 C80 38, 96 38, 110 54" class="i-path"/>
+          <path d="M104 51 L111 55 L110 47" class="i-muted"/>
+          <rect x="95" y="52" width="52" height="46" rx="7" class="i-cardbox" stroke-width="1.5"/>
+          <rect x="102" y="60" width="30" height="6" rx="3" class="i-ink"/>
+          <rect x="102" y="71" width="38" height="5" rx="2.5" class="i-muted"/>
+          <rect x="102" y="82" width="38" height="10" rx="4" class="i-primary"/>
+        </svg>
+        <h3>Move them forward</h3>
+        <p>One button sends a candidate to the next stage. The dropdown sends them to any stage, including back.</p>
+      </li>
+      <li>
+        <svg viewBox="0 0 240 130" role="img" aria-label="Each stage shows a count, and one candidate is flagged as stuck after nine days">
+          <rect x="34" y="30" width="172" height="4" class="i-linefill"/>
+          <circle cx="34" cy="32" r="14" class="i-surface" style="stroke:var(--s-applied);stroke-width:4px"/>
+          <circle cx="91" cy="32" r="14" class="i-surface" style="stroke:var(--s-screen);stroke-width:4px"/>
+          <circle cx="149" cy="32" r="14" class="i-surface" style="stroke:var(--s-interview);stroke-width:4px"/>
+          <circle cx="206" cy="32" r="14" class="i-surface" style="stroke:var(--s-offer);stroke-width:4px"/>
+          <text x="34" y="37" text-anchor="middle" font-size="13" class="i-text">4</text>
+          <text x="91" y="37" text-anchor="middle" font-size="13" class="i-text">2</text>
+          <text x="149" y="37" text-anchor="middle" font-size="13" class="i-text">2</text>
+          <text x="206" y="37" text-anchor="middle" font-size="13" class="i-text">1</text>
+          <rect x="56" y="64" width="128" height="48" rx="8" class="i-stuckline" stroke-width="1.5"/>
+          <rect x="66" y="74" width="48" height="7" rx="3.5" class="i-ink"/>
+          <rect x="66" y="88" width="34" height="5" rx="2.5" class="i-muted"/>
+          <rect x="122" y="84" width="52" height="18" rx="9" class="i-stuckbg"/>
+          <text x="148" y="97" text-anchor="middle" font-size="10.5" class="i-text" style="fill:var(--stuck)">9 days</text>
+        </svg>
+        <h3>See who is stuck</h3>
+        <p>Every stage shows its count. Anyone who sits in one stage longer than your limit gets flagged.</p>
+      </li>
+    </ol>
+  </section>
+
+  <section class="wrap band" id="fit" aria-labelledby="fit-h">
+    <h2 id="fit-h">Is TalentTrack a fit?</h2>
+    <div class="fit">
+      <div class="yes">
+        <h3>It fits if you</h3>
+        <ul>
+          <li>Hire for a few roles at a time and track them in a spreadsheet or an inbox</li>
+          <li>Want to answer "where is everyone?" in ten seconds</li>
+          <li>Lose candidates because nobody noticed they were waiting</li>
+          <li>Want something a hiring manager can use without training</li>
+        </ul>
+      </div>
+      <div class="no">
+        <h3>Look elsewhere if you</h3>
+        <ul>
+          <li>Need job-board posting, resume parsing or e-signatures for offers</li>
+          <li>Need payroll, onboarding or a full HR system</li>
+          <li>Rarely hire, so there is no pipeline to track</li>
+          <li>Need a long list of custom features before you can start</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap band addons" id="addons" aria-labelledby="addons-h">
+    <h2 id="addons-h">Need one more thing?</h2>
+    <p>Every team hires a little differently. Tell us the one thing you need on top of the basics. If it is small, we build it into TalentTrack and it keeps working for you from then on.</p>
+    <p class="sub-h" id="addon-h" hidden>Add-ons already built in</p>
+    <ul id="addon-list" hidden></ul>
+  </section>
+</main>
+
+<footer class="wrap site-foot">
+  <p>TalentTrack is built by <strong id="team-name"></strong></p>
+  <button type="button" class="btn-quiet" id="reset-btn">Reset demo data</button>
+</footer>
+
+<div class="toast" id="toast" hidden>
+  <span id="toast-msg" role="status" aria-live="polite"></span>
+  <button type="button" id="toast-undo" hidden>Undo</button>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ---------- Settings you will edit ---------- */
+  var TEAM_NAME = 'Warm Intro Knights';   // shown in the footer
+  var STAGES = [
+    { id: 'applied',   name: 'Applied',   color: 'var(--s-applied)' },
+    { id: 'screen',    name: 'Screen',    color: 'var(--s-screen)' },
+    { id: 'interview', name: 'Interview', color: 'var(--s-interview)' },
+    { id: 'offer',     name: 'Offer',     color: 'var(--s-offer)' },
+    { id: 'hired',     name: 'Hired',     color: 'var(--s-hired)' }
+  ];
+  // Customer add-ons that have shipped. Each entry shows in the Add-ons section.
+  var ADDONS = [
+    { title: 'Offer and joining dates', detail: 'Record the offer accepted date and notice period on any candidate. TalentTrack works out the expected joining date and flags renege risk when the notice period is over 60 days.' },
+    { title: 'Interview scorecards', detail: 'Rate Empathy, Troubleshooting and Written communication from 1 to 5 with the interviewer\u2019s name and a note. Any number of scorecards per candidate, averaged on the card and compared side by side.' },
+    { title: 'Stage aging', detail: 'Every card shows its days in the current stage, and anyone over 5 days is flagged as stuck.' },
+    { title: 'Start dates and ramp', detail: 'Set expected start dates for Offer and Hired, a ramp period and a target agent count. See agents on the floor week by week and a warning when you will be short.' }
+  ];
+  var CRITERIA = [
+    { id: 'empathy', name: 'Empathy' },
+    { id: 'troubleshooting', name: 'Troubleshooting' },
+    { id: 'written', name: 'Written communication', short: 'Written' }
+  ];
+  var NOTICE_MAX = 180;          // longest notice period accepted, in days
+  var RENEGE_OVER = 60;          // notice periods longer than this are flagged
+
+  var STORAGE_KEY = 'talenttrack.v2';
+  var DAY = 86400000;
+  var SLOT_HOURS = [10, 13, 15];   // interview slots offered on weekdays
+  var SLOT_MIN = 45;               // interview length in minutes
+
+  /* ---------- State ---------- */
+  function seed() {
+    var now = Date.now();
+    var rows = [
+      ['Tomás Silva', 'Support Agent', 'applied', 0],
+      ['Maya Okafor', 'Support Agent', 'applied', 1],
+      ['Daniel Reyes', 'Support Agent', 'applied', 3],
+      ['Hana Suzuki', 'Support Team Lead', 'applied', 9],
+      ['Aisha Rahman', 'Support Agent', 'screen', 2],
+      ['Lukas Meyer', 'Support Agent', 'screen', 12],
+      ['Chloe Bennett', 'Support Agent', 'interview', 4],
+      ['Ravi Patel', 'Support Agent', 'interview', 3],
+      ['Nora Lindqvist', 'Support Agent', 'offer', 5],
+      ['Samuel Adeyemi', 'Support Agent', 'hired', 20]
+    ];
+    var today = new Date(); today.setHours(0, 0, 0, 0);
+    function shift(days) { return toYMD(new Date(today.getFullYear(), today.getMonth(), today.getDate() + days)); }
+    var s = {
+      stuckDays: 5,
+      auto: { book: true, advance: true },
+      ramp: { weeks: 2, target: 4, neededBy: shift(42) },
+      log: [],
+      candidates: rows.map(function (r, i) {
+        return { id: 'seed' + i, name: r[0], role: r[1], stage: r[2], enteredAt: now - r[3] * DAY - (r[3] ? 3600000 : 60000 * (i + 1)), scorecards: [] };
+      })
+    };
+    function cards(list) {
+      return list.map(function (x, i) {
+        return { id: 'sc' + i + x[0].replace(/\W/g, ''), who: x[0], empathy: x[1], troubleshooting: x[2], written: x[3], note: x[4], t: now - (list.length - i) * 3600000 };
+      });
+    }
+    s.candidates[6].scorecards = cards([
+      ['Priya Nair', 5, 4, 4, 'Calm with the angry-customer role play. Asked good clarifying questions.'],
+      ['Marcus Lee', 4, 4, 5, 'Written reply to the refund ticket was clear and friendly.'],
+      ['Jordan Kim', 4, 3, 4, 'Got to the root cause of the login issue but needed a hint.'],
+      ['Elena Rossi', 5, 4, 4, 'Strong empathy. Would be great on the escalations queue later.'],
+      ['Sam Ortiz', 4, 5, 4, 'Walked through the router reset steps without a script.'],
+      ['Dana Brooks', 5, 4, 5, 'Best written sample this round. Recommend moving to offer.']
+    ]);
+    s.candidates[7].scorecards = cards([
+      ['Priya Nair', 3, 5, 3, 'Very strong technically. Tone was a bit abrupt.'],
+      ['Marcus Lee', 3, 4, 3, 'Written reply was correct but short on warmth.']
+    ]);
+    s.candidates[6].interviewAt = openSlot([]);   // one interview already on the calendar
+    s.candidates[8].acceptedDate = shift(-2);
+    s.candidates[8].noticeDays = 90;             // over 60: shows the renege-risk badge
+    s.candidates[8].startDate = shift(19);
+    s.candidates[9].acceptedDate = shift(-20);
+    s.candidates[9].noticeDays = 30;
+    s.candidates[9].startDate = shift(10);
+    return s;
+  }
+  function ensureDefaults(s) {
+    if (!s.auto || typeof s.auto !== 'object') s.auto = {};
+    if (typeof s.auto.book !== 'boolean') s.auto.book = true;
+    if (typeof s.auto.advance !== 'boolean') s.auto.advance = true;
+    if (!Array.isArray(s.log)) s.log = [];
+    if (!s.ramp || typeof s.ramp !== 'object') s.ramp = {};
+    if (!validInt(s.ramp.weeks, 0, 12)) s.ramp.weeks = 2;
+    if (!validInt(s.ramp.target, 1, 500)) s.ramp.target = 4;
+    if (!parseLocalDate(s.ramp.neededBy)) { var nb = new Date(); nb.setDate(nb.getDate() + 42); s.ramp.neededBy = toYMD(nb); }
+    s.candidates.forEach(function (c) {
+      if (!Array.isArray(c.scorecards)) c.scorecards = [];
+      c.scorecards = c.scorecards.filter(validScorecard);
+      if (!parseLocalDate(c.startDate)) c.startDate = null;
+      if (!parseLocalDate(c.acceptedDate)) c.acceptedDate = null;
+      if (!validNotice(c.noticeDays)) c.noticeDays = null;
+    });
+    return s;
+  }
+
+  /* ---------- Offer accepted date, notice period, expected joining date ---------- */
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+  function toYMD(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
+  // Reads "YYYY-MM-DD" as a local calendar date. Never uses Date.parse, which would read it as UTC.
+  function parseLocalDate(str) {
+    if (typeof str !== 'string') return null;
+    var parts = str.split('-');
+    if (parts.length !== 3 || !/^\d{4}$/.test(parts[0]) || !/^\d{2}$/.test(parts[1]) || !/^\d{2}$/.test(parts[2])) return null;
+    var y = parseInt(parts[0], 10), m = parseInt(parts[1], 10), d = parseInt(parts[2], 10);
+    var dt = new Date(y, m - 1, d);
+    if (y < 100) dt.setFullYear(y);
+    if (dt.getFullYear() !== y || dt.getMonth() !== m - 1 || dt.getDate() !== d) return null;
+    return dt;
+  }
+  // DD/MM/YYYY, built by hand.
+  function fmtDMY(dt) {
+    var y = String(dt.getFullYear());
+    while (y.length < 4) y = '0' + y;
+    return pad2(dt.getDate()) + '/' + pad2(dt.getMonth() + 1) + '/' + y;
+  }
+  function validInt(n, lo, hi) { return typeof n === 'number' && isFinite(n) && Math.floor(n) === n && n >= lo && n <= hi; }
+  function validScorecard(x) {
+    return x && typeof x.who === 'string' && CRITERIA.every(function (k) { return validInt(x[k.id], 1, 5); });
+  }
+  function validNotice(n) { return typeof n === 'number' && isFinite(n) && Math.floor(n) === n && n >= 0 && n <= NOTICE_MAX; }
+  // Text from a notice input -> { ok, value }. Blank is fine and means "not set".
+  function readNotice(raw) {
+    var t = String(raw == null ? '' : raw).trim();
+    if (t === '') return { ok: true, value: null };
+    var n = Number(t);
+    return validNotice(n) ? { ok: true, value: n } : { ok: false, value: null };
+  }
+  function joiningDate(c) {
+    var dt = parseLocalDate(c.acceptedDate);
+    if (!dt || !validNotice(c.noticeDays)) return null;
+    dt.setDate(dt.getDate() + c.noticeDays);
+    return dt;
+  }
+  function isRenegeRisk(c) { return validNotice(c.noticeDays) && c.noticeDays > RENEGE_OVER; }
+  var DASH = '\u2014';
+  var NOTICE_MSG = 'Notice period must be a whole number from 0 to ' + NOTICE_MAX + '.';
+
+  /* ---------- Interview slots ---------- */
+  function openSlot(taken) {
+    var base = new Date(); base.setHours(0, 0, 0, 0);
+    for (var day = 1; day < 90; day++) {
+      var d = new Date(base.getTime()); d.setDate(base.getDate() + day);
+      if (d.getDay() === 0 || d.getDay() === 6) continue;
+      for (var i = 0; i < SLOT_HOURS.length; i++) {
+        var t = new Date(d.getTime()); t.setHours(SLOT_HOURS[i], 0, 0, 0);
+        if (taken.indexOf(t.getTime()) === -1) return t.getTime();
+      }
+    }
+    return null;
+  }
+  function takenSlots(exceptId) {
+    return state.candidates
+      .filter(function (c) { return typeof c.interviewAt === 'number' && c.id !== exceptId; })
+      .map(function (c) { return c.interviewAt; });
+  }
+  function fmtWhen(ms) {
+    return new Date(ms).toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  }
+  function logAuto(text) {
+    state.log.unshift({ t: Date.now(), text: text });
+    if (state.log.length > 12) state.log.length = 12;
+  }
+  // Runs every time a candidate changes stage. Returns the booked time if autopilot booked one.
+  function afterStageChange(c) {
+    var iv = stageIndex('interview');
+    if (iv === -1) return null;
+    var idx = stageIndex(c.stage);
+    if (idx > iv && typeof c.interviewAt === 'number') delete c.interviewAt;
+    if (idx === iv && state.auto.book && typeof c.interviewAt !== 'number') {
+      var t = openSlot(takenSlots(c.id));
+      if (t) {
+        c.interviewAt = t;
+        logAuto('Booked ' + c.name + ' for ' + fmtWhen(t) + ' when they reached Interview');
+        return t;
+      }
+    }
+    return null;
+  }
+
+  function validState(s) {
+    if (!s || !Array.isArray(s.candidates) || typeof s.stuckDays !== 'number') return false;
+    return s.candidates.every(function (c) {
+      return c && typeof c.id === 'string' && typeof c.name === 'string' && typeof c.role === 'string' &&
+        typeof c.enteredAt === 'number' && stageIndex(c.stage) !== -1;
+    });
+  }
+  function load() {
+    try {
+      var raw = window.localStorage.getItem(STORAGE_KEY);
+      if (!raw) return null;
+      var s = JSON.parse(raw);
+      return validState(s) ? s : null;
+    } catch (e) { return null; }
+  }
+  function save() {
+    try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) { /* storage unavailable: keep working in memory */ }
+  }
+  function snapshot() { return JSON.parse(JSON.stringify(state)); }
+
+  function stageIndex(id) {
+    for (var i = 0; i < STAGES.length; i++) if (STAGES[i].id === id) return i;
+    return -1;
+  }
+  function daysIn(c) { return Math.max(0, Math.floor((Date.now() - c.enteredAt) / DAY)); }
+  function isStuck(c) {
+    return stageIndex(c.stage) < STAGES.length - 1 && daysIn(c) > state.stuckDays;
+  }
+  function byId(id) {
+    for (var i = 0; i < state.candidates.length; i++) if (state.candidates[i].id === id) return state.candidates[i];
+    return null;
+  }
+
+  var state = ensureDefaults(load() || seed());
+  var onlyStuck = false;
+
+  /* ---------- DOM helpers ---------- */
+  var $ = function (id) { return document.getElementById(id); };
+  function el(tag, attrs, text) {
+    var n = document.createElement(tag);
+    if (attrs) Object.keys(attrs).forEach(function (k) {
+      if (attrs[k] != null && attrs[k] !== false) n.setAttribute(k, attrs[k]);
+    });
+    if (text != null) n.textContent = text;
+    return n;
+  }
+  function plural(n, word) { return n + ' ' + word + (n === 1 ? '' : 's'); }
+
+  /* ---------- Rendering ---------- */
+  function render() {
+    renderLinemap();
+    renderTotals();
+    renderLanes();
+    // The AI tools are kept separate so a fault there can never break the board.
+    try { renderExtras(); } catch (e) { /* board keeps working */ }
+  }
+
+  function inStage(stageId) {
+    return state.candidates
+      .filter(function (c) { return c.stage === stageId; })
+      .sort(function (a, b) { return b.enteredAt - a.enteredAt; });
+  }
+
+  function renderLinemap() {
+    var map = $('linemap');
+    map.textContent = '';
+    STAGES.forEach(function (s) {
+      var list = inStage(s.id);
+      var stuck = list.filter(isStuck).length;
+      var li = el('li', { style: '--stage:' + s.color, 'data-stage': s.id });
+      var btn = el('button', { type: 'button', 'class': 'station', title: 'Go to the ' + s.name + ' column' });
+      btn.appendChild(el('span', { 'class': 'ring', 'aria-hidden': 'true' }, String(list.length)));
+      btn.appendChild(el('span', { 'class': 'st-name' }, s.name));
+      btn.appendChild(el('span', { 'class': 'vh' }, ': ' + plural(list.length, 'candidate')));
+      btn.appendChild(el('span', { 'class': 'st-stuck' }, stuck ? stuck + ' stuck' : ''));
+      btn.addEventListener('click', function () { goToLane(s.id); });
+      li.appendChild(btn);
+      map.appendChild(li);
+    });
+  }
+
+  function renderTotals() {
+    var total = state.candidates.length;
+    var stuck = state.candidates.filter(isStuck).length;
+    var t = $('totals');
+    t.textContent = plural(total, 'candidate') + ', ';
+    var s = el('span', { 'class': stuck ? 'n-stuck' : '' }, stuck + ' stuck');
+    t.appendChild(s);
+    var risk = state.candidates.filter(isRenegeRisk).length;
+    var r = $('renege-total');
+    r.textContent = 'Renege risk: ' + risk;
+    r.className = 'renege-total' + (risk ? ' is-risk' : '');
+    r.setAttribute('data-count', String(risk));
+  }
+
+  function renderLanes() {
+    var host = $('lanes');
+    host.textContent = '';
+    STAGES.forEach(function (s) {
+      var all = inStage(s.id);
+      var shown = onlyStuck ? all.filter(isStuck) : all;
+      var lane = el('section', { 'class': 'lane', style: '--stage:' + s.color, 'data-stage': s.id, 'aria-label': s.name + ', ' + plural(all.length, 'candidate') });
+      var h = el('h3');
+      h.appendChild(el('span', { 'class': 'dot', 'aria-hidden': 'true' }));
+      h.appendChild(document.createTextNode(s.name));
+      h.appendChild(el('span', { 'class': 'vh' }, ': '));
+      h.appendChild(el('span', { 'class': 'count', 'data-count': s.id }, String(all.length)));
+      h.appendChild(el('span', { 'class': 'vh' }, all.length === 1 ? ' candidate' : ' candidates'));
+      lane.appendChild(h);
+      if (!shown.length) {
+        lane.appendChild(el('p', { 'class': 'lane-empty' }, onlyStuck ? 'Nobody stuck here.' : 'Nobody here yet.'));
+      } else {
+        var ul = el('ul', { 'class': 'lane-list' });
+        shown.forEach(function (c) { ul.appendChild(cardFor(c)); });
+        lane.appendChild(ul);
+      }
+      host.appendChild(lane);
+    });
+  }
+
+  function cardFor(c) {
+    var idx = stageIndex(c.stage);
+    var next = STAGES[idx + 1];
+    var d = daysIn(c);
+    var stuck = isStuck(c);
+    var li = el('li', { 'class': 'card' + (stuck ? ' is-stuck' : ''), 'data-id': c.id });
+    li.appendChild(el('p', { 'class': 'c-name' }, c.name));
+    li.appendChild(el('p', { 'class': 'c-role' }, c.role));
+    var meta = el('p', { 'class': 'c-meta' });
+    meta.appendChild(el('span', null, d === 0 ? 'Here since today' : plural(d, 'day') + ' in this stage'));
+    if (stuck) meta.appendChild(el('span', { 'class': 'badge-stuck' }, 'Stuck'));
+    if (isRenegeRisk(c)) meta.appendChild(el('span', { 'class': 'badge-renege' }, 'Renege risk'));
+    if (typeof c.interviewAt === 'number') meta.appendChild(el('span', { 'class': 'badge-score badge-when' }, 'Interview booked ' + fmtWhen(c.interviewAt)));
+    if (typeof c.score === 'number') meta.appendChild(el('span', { 'class': 'badge-score' }, 'Interview score ' + c.score.toFixed(1) + ' / 5'));
+    li.appendChild(meta);
+
+    var avg = scoreAvgs(c);
+    if (avg) {
+      var box = el('div', { 'class': 'c-scores', 'aria-label': 'Scorecard averages' });
+      box.appendChild(el('span', { 'class': 'n' }, plural(avg.n, 'scorecard') + ', averages'));
+      CRITERIA.forEach(function (k) {
+        var cell = el('span', null, k.short || k.name);
+        cell.insertBefore(el('b', null, avg[k.id].toFixed(1)), cell.firstChild);
+        box.appendChild(cell);
+      });
+      var ov = el('span', { 'class': 'ov' }, 'Overall');
+      ov.insertBefore(el('b', null, avg.overall.toFixed(1)), ov.firstChild);
+      box.appendChild(ov);
+      li.appendChild(box);
+    }
+    var addSc = el('button', { type: 'button', 'class': 'btn-quiet add-sc', 'aria-label': 'Add a scorecard for ' + c.name }, avg ? 'Add scorecard' : 'Add first scorecard');
+    addSc.addEventListener('click', function () { openScoreForm(c.id); });
+    li.appendChild(addSc);
+
+    if (next) {
+      var b = el('button', { type: 'button', 'class': 'btn btn-next', 'aria-label': 'Move ' + c.name + ' to ' + next.name }, 'Move to ' + next.name);
+      b.addEventListener('click', function () { moveCandidate(c.id, next.id); });
+      li.appendChild(b);
+    } else {
+      li.appendChild(el('p', { 'class': 'c-final' }, 'Final stage'));
+    }
+
+    var row = el('div', { 'class': 'c-row' });
+    var sel = el('select', { 'class': 'c-select', 'aria-label': 'Stage for ' + c.name });
+    STAGES.forEach(function (s) {
+      var o = el('option', { value: s.id }, s.name);
+      if (s.id === c.stage) o.selected = true;
+      sel.appendChild(o);
+    });
+    sel.addEventListener('change', function () { moveCandidate(c.id, sel.value); });
+    row.appendChild(sel);
+    var rm = el('button', { type: 'button', 'class': 'btn-quiet', 'aria-label': 'Remove ' + c.name }, 'Remove');
+    rm.addEventListener('click', function () { removeCandidate(c.id); });
+    row.appendChild(rm);
+    li.appendChild(row);
+
+    // Offer details: read-out first, then the two editable fields.
+    var dl = el('dl', { 'class': 'offer' });
+    var lateStage = stageIndex(c.stage) >= stageIndex('offer');
+    var fields = [['Offer accepted date', 'accepted'], ['Notice period', 'notice'], ['Expected joining date', 'joining']];
+    if (lateStage) fields.push(['Expected start date', 'start']);
+    fields.forEach(function (f) {
+      var pair = el('div');
+      pair.appendChild(el('dt', null, f[0]));
+      pair.appendChild(el('dd', { 'data-f': f[1] }, DASH));
+      dl.appendChild(pair);
+    });
+    li.appendChild(dl);
+    var edit = el('div', { 'class': 'offer-edit' });
+    var dLab = el('label', null, 'Offer accepted date');
+    var dIn = el('input', { type: 'date', 'class': 'o-date', 'aria-label': 'Offer accepted date for ' + c.name });
+    if (c.acceptedDate) dIn.value = c.acceptedDate;
+    dLab.appendChild(dIn);
+    var nLab = el('label', null, 'Notice period (days)');
+    var nIn = el('input', { type: 'number', 'class': 'o-notice', min: '0', max: String(NOTICE_MAX), step: '1', inputmode: 'numeric', placeholder: DASH, 'aria-label': 'Notice period (days) for ' + c.name });
+    if (validNotice(c.noticeDays)) nIn.value = String(c.noticeDays);
+    nLab.appendChild(nIn);
+    edit.appendChild(dLab); edit.appendChild(nLab);
+    var sIn = null;
+    if (lateStage) {
+      var sLab = el('label', null, 'Expected start date');
+      sIn = el('input', { type: 'date', 'class': 'o-start', 'aria-label': 'Expected start date for ' + c.name });
+      if (c.startDate) sIn.value = c.startDate;
+      sLab.appendChild(sIn);
+      edit.appendChild(sLab);
+    }
+    edit.appendChild(el('p', { 'class': 'o-err', role: 'alert' }));
+    li.appendChild(edit);
+    ['input', 'change'].forEach(function (ev) {
+      dIn.addEventListener(ev, function () { editAccepted(c.id, li); });
+      nIn.addEventListener(ev, function () { editNotice(c.id, li); });
+      if (sIn) sIn.addEventListener(ev, function () { editStart(c.id, li); });
+    });
+    showOffer(li, c);
+    return li;
+  }
+
+  // Fills in the offer read-out and the renege badge on one card, without redrawing the board
+  // (so the field you are typing in keeps focus).
+  function showOffer(li, c) {
+    var acc = parseLocalDate(c.acceptedDate);
+    var join = joiningDate(c);
+    li.querySelector('[data-f="accepted"]').textContent = acc ? fmtDMY(acc) : DASH;
+    li.querySelector('[data-f="notice"]').textContent = validNotice(c.noticeDays) ? plural(c.noticeDays, 'day') : DASH;
+    li.querySelector('[data-f="joining"]').textContent = join ? fmtDMY(join) : DASH;
+    var st = li.querySelector('[data-f="start"]');
+    if (st) { var sd = startOf(c); st.textContent = sd ? fmtDMY(sd) : DASH; }
+    var meta = li.querySelector('.c-meta');
+    var badge = meta.querySelector('.badge-renege');
+    if (isRenegeRisk(c) && !badge) {
+      var b = el('span', { 'class': 'badge-renege' }, 'Renege risk');
+      var after = meta.querySelector('.badge-stuck') || meta.firstChild;
+      meta.insertBefore(b, after.nextSibling);
+    } else if (!isRenegeRisk(c) && badge) {
+      meta.removeChild(badge);
+    }
+  }
+  function editAccepted(id, li) {
+    var c = byId(id);
+    if (!c) return;
+    var v = li.querySelector('.o-date').value;
+    c.acceptedDate = parseLocalDate(v) ? v : null;
+    save(); showOffer(li, c); renderTotals(); safely(renderRamp);
+  }
+  function editStart(id, li) {
+    var c = byId(id);
+    if (!c) return;
+    var v = li.querySelector('.o-start').value;
+    c.startDate = parseLocalDate(v) ? v : null;
+    save(); showOffer(li, c); safely(renderRamp);
+  }
+  function editNotice(id, li) {
+    var c = byId(id);
+    if (!c) return;
+    var input = li.querySelector('.o-notice');
+    var r = readNotice(input.value);
+    if (input.validity && input.validity.badInput) r = { ok: false, value: null };
+    c.noticeDays = r.value;
+    input.setAttribute('aria-invalid', r.ok ? 'false' : 'true');
+    li.querySelector('.o-err').textContent = r.ok ? '' : NOTICE_MSG;
+    save(); showOffer(li, c); renderTotals(); safely(renderRamp);
+  }
+
+  function spotlight(id) {
+    var card = document.querySelector('.card[data-id="' + id + '"]');
+    if (!card) { $('totals').focus(); return; }
+    card.classList.add('flash');
+    window.setTimeout(function () { card.classList.remove('flash'); }, 1500);
+    if (card.scrollIntoView) card.scrollIntoView({ block: 'nearest' });
+    return card;
+  }
+
+  function smooth() {
+    return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+  }
+  function goToLane(stageId) {
+    var lane = document.querySelector('.lane[data-stage="' + stageId + '"]');
+    if (!lane) return;
+    if (lane.scrollIntoView) lane.scrollIntoView({ behavior: smooth(), block: 'nearest' });
+    lane.classList.add('spot');
+    window.setTimeout(function () { lane.classList.remove('spot'); }, 1500);
+  }
+
+  /* ---------- Actions ---------- */
+  function addCandidate(name, role, acceptedDate, noticeDays) {
+    var c = { id: 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name: name, role: role, stage: STAGES[0].id, enteredAt: Date.now(),
+      acceptedDate: parseLocalDate(acceptedDate) ? acceptedDate : null, noticeDays: validNotice(noticeDays) ? noticeDays : null };
+    state.candidates.push(c);
+    if (onlyStuck) { onlyStuck = false; $('only-stuck').checked = false; }
+    save(); render();
+    spotlight(c.id);
+    toast('Added ' + name + ' to ' + STAGES[0].name);
+  }
+
+  function moveCandidate(id, stageId, stay) {
+    var c = byId(id);
+    var idx = stageIndex(stageId);
+    if (!c || idx === -1 || c.stage === stageId) return false;
+    c.stage = stageId;
+    c.enteredAt = Date.now();
+    var booked = afterStageChange(c);
+    save(); render();
+    if (!stay) {
+      var card = spotlight(id);
+      if (card) {
+        var target = card.querySelector('.btn-next') || card.querySelector('.c-select');
+        if (target) target.focus();
+      }
+    }
+    toast('Moved ' + c.name + ' to ' + STAGES[idx].name + (booked ? '. Autopilot booked ' + fmtWhen(booked) : ''));
+    return true;
+  }
+
+  function removeCandidate(id) {
+    var c = byId(id);
+    if (!c) return;
+    var before = snapshot();
+    state.candidates = state.candidates.filter(function (x) { return x.id !== id; });
+    save(); render();
+    $('totals').focus();
+    toast('Removed ' + c.name, function () { state = before; save(); render(); spotlight(id); });
+  }
+
+  function resetDemo() {
+    var before = snapshot();
+    ivCandId = null; ivResult = null; detailId = null; $('iv-kit').textContent = '';
+    state = ensureDefaults(seed());
+    onlyStuck = false; $('only-stuck').checked = false;
+    $('stuck-days').value = state.stuckDays;
+    save(); render();
+    toast('Demo data reset', function () { state = before; $('stuck-days').value = state.stuckDays; save(); render(); });
+  }
+
+  /* ---------- AI Recruiter ---------- */
+  var recOpen = false;
+  function stuckList() {
+    return state.candidates.filter(isStuck).sort(function (a, b) { return a.enteredAt - b.enteredAt; });
+  }
+  function renderRecruiter() {
+    var out = $('rec-out');
+    out.textContent = '';
+    if (!recOpen) return;
+    var total = state.candidates.length;
+    if (!total) { out.appendChild(el('p', { 'class': 'rec-summary' }, 'The board is empty. Add a candidate and review again.')); return; }
+    var busiest = null, busiestN = 0;
+    STAGES.slice(0, -1).forEach(function (s) {
+      var n = inStage(s.id).length;
+      if (n > busiestN) { busiest = s; busiestN = n; }
+    });
+    var stuck = stuckList();
+    var summary = plural(total, 'candidate') + ' on the board.';
+    if (busiest) summary += ' ' + busiest.name + ' is your busiest stage with ' + busiestN + ' waiting.';
+    summary += stuck.length
+      ? ' ' + plural(stuck.length, 'candidate') + (stuck.length === 1 ? ' has' : ' have') + ' waited past your ' + state.stuckDays + '-day limit.'
+      : ' Nobody has waited past your ' + state.stuckDays + '-day limit, so there is nothing to chase.';
+    out.appendChild(el('p', { 'class': 'rec-summary' }, summary));
+    if (!stuck.length) return;
+    var ul = el('ul', { 'class': 'rec-list' });
+    stuck.forEach(function (c) {
+      var next = STAGES[stageIndex(c.stage) + 1];
+      var li = el('li', { 'data-rec': c.id });
+      li.appendChild(el('span', null, c.name + ' (' + c.role + ') has been in ' + STAGES[stageIndex(c.stage)].name + ' for ' + plural(daysIn(c), 'day') + '.'));
+      var b = el('button', { type: 'button', 'class': 'btn btn-sm btn-ghost', 'aria-label': 'Move ' + c.name + ' to ' + next.name }, 'Move to ' + next.name);
+      b.addEventListener('click', function () { if (moveCandidate(c.id, next.id, true)) $('rec-out').focus(); });
+      li.appendChild(b);
+      ul.appendChild(li);
+    });
+    out.appendChild(ul);
+    if (stuck.length > 1) {
+      var all = el('button', { type: 'button', 'class': 'btn btn-sm', id: 'rec-all' }, 'Move all ' + stuck.length + ' forward');
+      all.addEventListener('click', moveAllStuck);
+      out.appendChild(all);
+    }
+  }
+  function moveAllStuck() {
+    var stuck = stuckList();
+    if (!stuck.length) return;
+    var before = snapshot();
+    var now = Date.now();
+    stuck.forEach(function (c) { c.stage = STAGES[stageIndex(c.stage) + 1].id; c.enteredAt = now; afterStageChange(c); });
+    save(); render();
+    $('rec-out').focus();
+    toast('Moved ' + plural(stuck.length, 'candidate') + ' forward', function () { state = before; save(); render(); });
+  }
+
+  /* ---------- AI Interviewer ---------- */
+  var ivCandId = null;     // candidate whose interview is open
+  var ivResult = null;     // last saved scorecard
+  var QUESTION_SETS = [
+    { match: /engineer|developer|backend|frontend|software|devops|programmer/i, label: 'engineering', q: [
+      'Walk me through a system you built. What would you change about it now?',
+      'Tell me about a bug that took days to find. How did you track it down?',
+      'How do you decide when code is ready to ship?',
+      'Describe a disagreement over a technical decision. How did it end?' ] },
+    { match: /design|ux|ui\b|creative/i, label: 'design', q: [
+      'Show me a project you are proud of. What problem did it solve?',
+      'Tell me about a design that tested badly. What did you change?',
+      'How do you handle feedback you disagree with?',
+      'How do you work with engineers when time is short?' ] },
+    { match: /data|analyst|analytics|scientist/i, label: 'data', q: [
+      'Tell me about an analysis that changed a decision.',
+      'How do you check your numbers are right before you share them?',
+      'Explain a recent finding as if I had no data background.',
+      'What do you do when the data is messy or missing?' ] },
+    { match: /sales|account|business development|revenue/i, label: 'sales', q: [
+      'Walk me through a deal you won. Why did the customer buy?',
+      'Tell me about a deal you walked away from. Why?',
+      'How do you find out who really makes the decision?',
+      'How do you plan your week when the pipeline is thin?' ] },
+    { match: /support|customer|success|service/i, label: 'customer support', q: [
+      'Tell me about your hardest customer conversation. How did it end?',
+      'How do you decide when to escalate?',
+      'How do you keep quality up when the queue is long?',
+      'What is one thing you changed that cut repeat questions?' ] },
+    { match: /recruit|talent|people|hr\b|human resources/i, label: 'recruiting', q: [
+      'Tell me about a role that was hard to fill. What worked in the end?',
+      'How do you keep candidates warm when a decision is slow?',
+      'How do you push back on a hiring manager with unrealistic asks?',
+      'What do you track to know your pipeline is healthy?' ] }
+  ];
+  var GENERAL_SET = { label: 'general', q: [
+    'Why this role, and why now?',
+    'Tell me about work you are proud of. What was your part in it?',
+    'Describe a time something went wrong. What did you do next?',
+    'What do you need from a team to do your best work?' ] };
+  function questionsFor(role) {
+    for (var i = 0; i < QUESTION_SETS.length; i++) if (QUESTION_SETS[i].match.test(role)) return QUESTION_SETS[i];
+    return GENERAL_SET;
+  }
+
+  function fillCandSelect(sel) {
+    var keep = sel.value;
+    sel.textContent = '';
+    if (!state.candidates.length) {
+      sel.appendChild(el('option', { value: '' }, 'No candidates on the board'));
+      return;
+    }
+    STAGES.forEach(function (s) {
+      inStage(s.id).forEach(function (c) {
+        sel.appendChild(el('option', { value: c.id }, c.name + ', ' + c.role + ' (' + s.name + ')'));
+      });
+    });
+    if (keep && byId(keep)) sel.value = keep;
+  }
+
+  // Scores one answer from the interviewer's notes using four checks shown on screen.
+  function suggestFromNotes(text) {
+    var t = (text || '').trim();
+    if (!t) return null;
+    var checks = [
+      ['enough detail', t.split(/\s+/).length >= 25],
+      ['a result or number', /\d|increas|reduc|saved|grew|improv|shipped|launched|faster|fewer|doubled|halved|\bwon\b|\bcut\b|\bclosed\b/i.test(t)],
+      ['their own part', /\b(I|my)\b|\b(led|owned|built|ran|drove|managed|designed|wrote|fixed|decided)\b/i.test(t)],
+      ['what they learned', /learn|next time|would change|since then|in hindsight|differently|lesson/i.test(t)]
+    ];
+    var found = [], missing = [];
+    checks.forEach(function (c) { (c[1] ? found : missing).push(c[0]); });
+    return { score: 1 + found.length, found: found, missing: missing };
+  }
+
+  function startInterview() {
+    var c = byId($('iv-cand').value);
+    if (!c) { $('iv-err').textContent = 'Add a candidate to the board first.'; return; }
+    $('iv-err').textContent = '';
+    ivCandId = c.id; ivResult = null;
+    renderIvResult();
+    var set = questionsFor(c.role);
+    var kit = $('iv-kit');
+    kit.textContent = '';
+    kit.appendChild(el('p', { 'class': 'iv-for' }, 'Interview for ' + c.name + ', ' + c.role + ' (' + set.label + ' questions)'));
+    var ol = el('ol', { 'class': 'iv-q' });
+    set.q.forEach(function (q, i) {
+      var li = el('li');
+      li.appendChild(el('span', null, q));
+      var r = el('select', { 'class': 'iv-rate', 'aria-label': 'Rating for question ' + (i + 1) });
+      r.appendChild(el('option', { value: '' }, 'Rate answer'));
+      [['5', '5 Excellent'], ['4', '4 Good'], ['3', '3 Fair'], ['2', '2 Weak'], ['1', '1 Poor']].forEach(function (o) {
+        r.appendChild(el('option', { value: o[0] }, o[1]));
+      });
+      li.appendChild(r);
+      li.appendChild(el('textarea', { 'class': 'iv-notes', rows: '2', 'aria-label': 'Notes on answer ' + (i + 1), placeholder: 'Type or paste what they said' }));
+      li.appendChild(el('p', { 'class': 'iv-hint' }));
+      ol.appendChild(li);
+    });
+    kit.appendChild(ol);
+    var row = el('div', { 'class': 'btn-row' });
+    var autoBtn = el('button', { type: 'button', 'class': 'btn btn-sm btn-ghost', id: 'iv-auto' }, 'Score from notes');
+    autoBtn.addEventListener('click', scoreFromNotes);
+    var saveBtn = el('button', { type: 'button', 'class': 'btn btn-sm', id: 'iv-save' }, 'Save scorecard');
+    saveBtn.addEventListener('click', saveScorecard);
+    row.appendChild(autoBtn); row.appendChild(saveBtn);
+    kit.appendChild(row);
+    var first = kit.querySelector('.iv-notes');
+    if (first) first.focus();
+  }
+
+  function scoreFromNotes() {
+    var any = false;
+    Array.prototype.forEach.call(document.querySelectorAll('#iv-kit .iv-q li'), function (li) {
+      var hint = li.querySelector('.iv-hint');
+      var sug = suggestFromNotes(li.querySelector('.iv-notes').value);
+      if (!sug) { hint.textContent = 'No notes for this answer. Rate it by hand.'; return; }
+      any = true;
+      li.querySelector('.iv-rate').value = String(sug.score);
+      hint.textContent = 'Suggested ' + sug.score + ' of 5. Found: ' + (sug.found.length ? sug.found.join(', ') : 'none of the four checks') + '.' +
+        (sug.missing.length ? ' Missing: ' + sug.missing.join(', ') + '.' : '') + ' Change the rating if you disagree.';
+    });
+    $('iv-err').textContent = any ? '' : 'Type or paste notes on at least one answer first.';
+  }
+
+  function saveScorecard() {
+    var c = byId(ivCandId);
+    if (!c) { $('iv-kit').textContent = ''; ivCandId = null; return; }
+    var rates = Array.prototype.map.call(document.querySelectorAll('#iv-kit .iv-rate'), function (r) { return parseInt(r.value, 10); });
+    if (rates.some(isNaN)) { $('iv-err').textContent = 'Rate all ' + rates.length + ' answers before saving.'; return; }
+    $('iv-err').textContent = '';
+    var avg = Math.round(rates.reduce(function (a, b) { return a + b; }, 0) / rates.length * 10) / 10;
+    c.score = avg;
+    ivResult = { id: c.id, name: c.name, avg: avg, level: avg >= 4 ? 'strong' : avg >= 3 ? 'mixed' : 'weak', autoMoved: null };
+    if (ivResult.level === 'strong' && state.auto.advance) {
+      var next = STAGES[stageIndex(c.stage) + 1];
+      if (next) {
+        c.stage = next.id; c.enteredAt = Date.now();
+        logAuto('Moved ' + c.name + ' to ' + next.name + ' after a ' + avg.toFixed(1) + ' interview');
+        afterStageChange(c);
+        ivResult.autoMoved = next.name;
+      }
+    }
+    ivCandId = null;
+    $('iv-kit').textContent = '';
+    save(); render();
+    $('iv-result').focus();
+    toast('Scorecard saved for ' + c.name + (ivResult.autoMoved ? '. Autopilot moved them to ' + ivResult.autoMoved : ''));
+  }
+
+  function renderIvResult() {
+    var out = $('iv-result');
+    out.textContent = '';
+    if (!ivResult) return;
+    var c = byId(ivResult.id);
+    out.appendChild(el('p', null, 'Scorecard saved for ' + ivResult.name + ': ' + ivResult.avg.toFixed(1) + ' out of 5.'));
+    var verdicts = {
+      strong: 'Recommendation: strong interview. Move them forward.',
+      mixed: 'Recommendation: mixed interview. Book a second conversation before you decide.',
+      weak: 'Recommendation: weak interview. Do not move them forward.'
+    };
+    out.appendChild(el('p', { 'class': 'iv-verdict' }, verdicts[ivResult.level]));
+    if (ivResult.autoMoved) { out.appendChild(el('p', { id: 'iv-auto-note' }, 'Autopilot moved ' + ivResult.name + ' to ' + ivResult.autoMoved + '.')); return; }
+    if (!c || ivResult.level !== 'strong') return;
+    var next = STAGES[stageIndex(c.stage) + 1];
+    if (!next) return;
+    var b = el('button', { type: 'button', 'class': 'btn btn-sm', id: 'iv-move' }, 'Move ' + c.name + ' to ' + next.name);
+    b.addEventListener('click', function () { if (moveCandidate(c.id, next.id, true)) $('iv-result').focus(); });
+    out.appendChild(b);
+  }
+
+  /* ---------- AI Scheduler ---------- */
+  function calStamp(ms) { return new Date(ms).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, ''); }
+  function calTitle(c) { return 'Interview: ' + c.name + ' (' + c.role + ')'; }
+  function googleLink(c) {
+    var end = c.interviewAt + SLOT_MIN * 60000;
+    return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + encodeURIComponent(calTitle(c)) +
+      '&dates=' + calStamp(c.interviewAt) + '/' + calStamp(end) + '&details=' + encodeURIComponent('Booked with TalentTrack.');
+  }
+  function outlookLink(c) {
+    var end = c.interviewAt + SLOT_MIN * 60000;
+    return 'https://outlook.live.com/calendar/0/deeplink/compose?path=%2Fcalendar%2Faction%2Fcompose&rru=addevent&subject=' + encodeURIComponent(calTitle(c)) +
+      '&startdt=' + encodeURIComponent(new Date(c.interviewAt).toISOString()) + '&enddt=' + encodeURIComponent(new Date(end).toISOString()) +
+      '&body=' + encodeURIComponent('Booked with TalentTrack.');
+  }
+  function renderScheduler() {
+    fillCandSelect($('sc-cand'));
+    var list = $('sc-list');
+    list.textContent = '';
+    var booked = state.candidates
+      .filter(function (c) { return typeof c.interviewAt === 'number'; })
+      .sort(function (a, b) { return a.interviewAt - b.interviewAt; });
+    if (!booked.length) { list.appendChild(el('li', { 'class': 'none' }, 'No interviews booked yet.')); return; }
+    booked.forEach(function (c) {
+      var li = el('li', { 'data-booked': c.id });
+      li.appendChild(el('span', { 'class': 'sc-when' }, fmtWhen(c.interviewAt)));
+      li.appendChild(el('span', null, c.name + ', ' + c.role));
+      var acts = el('div', { 'class': 'sc-actions' });
+      acts.appendChild(el('a', { href: googleLink(c), target: '_blank', rel: 'noopener noreferrer', 'aria-label': 'Add ' + c.name + ' interview to Google Calendar' }, 'Add to Google Calendar'));
+      acts.appendChild(el('a', { href: outlookLink(c), target: '_blank', rel: 'noopener noreferrer', 'aria-label': 'Add ' + c.name + ' interview to Outlook' }, 'Add to Outlook'));
+      var x = el('button', { type: 'button', 'class': 'btn-quiet', 'aria-label': 'Cancel interview for ' + c.name }, 'Cancel');
+      x.addEventListener('click', function () { cancelInterview(c.id); });
+      acts.appendChild(x);
+      li.appendChild(acts);
+      list.appendChild(li);
+    });
+  }
+  function scheduleFor(id, ms) {
+    var c = byId(id);
+    if (!c) return;
+    c.interviewAt = ms;
+    $('sc-err').textContent = '';
+    save(); render();
+    toast('Booked ' + c.name + ' for ' + fmtWhen(ms));
+  }
+  function bookNextSlot() {
+    var c = byId($('sc-cand').value);
+    if (!c) { $('sc-err').textContent = 'Add a candidate to the board first.'; return; }
+    var t = openSlot(takenSlots(c.id));
+    if (!t) { $('sc-err').textContent = 'No open slots in the next 90 days.'; return; }
+    scheduleFor(c.id, t);
+  }
+  function bookChosenTime() {
+    var c = byId($('sc-cand').value);
+    if (!c) { $('sc-err').textContent = 'Add a candidate to the board first.'; return; }
+    var v = $('sc-when').value;
+    var ms = v ? new Date(v).getTime() : NaN;
+    if (isNaN(ms)) { $('sc-err').textContent = 'Choose a date and time, or book the next open slot.'; return; }
+    if (ms <= Date.now()) { $('sc-err').textContent = 'That time has passed. Choose a time in the future.'; return; }
+    var clash = null;
+    state.candidates.forEach(function (o) {
+      if (o.id !== c.id && typeof o.interviewAt === 'number' && Math.abs(o.interviewAt - ms) < SLOT_MIN * 60000) clash = o;
+    });
+    if (clash) { $('sc-err').textContent = 'That overlaps with ' + clash.name + ' at ' + fmtWhen(clash.interviewAt) + '. Choose another time or book the next open slot.'; return; }
+    scheduleFor(c.id, ms);
+    $('sc-when').value = '';
+  }
+  function cancelInterview(id) {
+    var c = byId(id);
+    if (!c) return;
+    var before = snapshot();
+    delete c.interviewAt;
+    save(); render();
+    toast('Cancelled the interview for ' + c.name, function () { state = before; save(); render(); });
+  }
+
+  /* ---------- Scorecards ---------- */
+  var detailId = null;
+  function scoreAvgs(c) {
+    var list = c.scorecards || [];
+    if (!list.length) return null;
+    var out = { n: list.length }, total = 0;
+    CRITERIA.forEach(function (k) {
+      var sum = 0;
+      list.forEach(function (x) { sum += x[k.id]; });
+      out[k.id] = sum / list.length;
+      total += out[k.id];
+    });
+    out.overall = total / CRITERIA.length;
+    return out;
+  }
+  function scoreCell(v, tag) {
+    var td = el(tag || 'td', { 'class': 'num' });
+    td.appendChild(el('span', { 'class': v >= 4 ? 'sc-hi' : v < 3 ? 'sc-lo' : '' }, v.toFixed(1)));
+    return td;
+  }
+  function headRow(table, cols) {
+    var thead = el('thead'), tr = el('tr');
+    cols.forEach(function (c) { tr.appendChild(el('th', { 'class': c[1] ? 'num' : null, scope: 'col' }, c[0])); });
+    thead.appendChild(tr); table.appendChild(thead);
+    var tb = el('tbody'); table.appendChild(tb);
+    return tb;
+  }
+  function emptyRow(tb, n, text) { var tr = el('tr'); tr.appendChild(el('td', { 'class': 'empty', colspan: String(n) }, text)); tb.appendChild(tr); }
+  function openScoreForm(id) {
+    renderScorecards();
+    $('sf-cand').value = id;
+    detailId = id;
+    renderScorecards();
+    $('scorecards').scrollIntoView({ behavior: smooth(), block: 'start' });
+    $('sf-who').focus({ preventScroll: true });
+  }
+  function renderScorecards() {
+    fillCandSelect($('sf-cand'));
+    Array.prototype.forEach.call(document.querySelectorAll('.sf-rate'), function (sel) {
+      if (sel.options.length) return;
+      sel.appendChild(el('option', { value: '' }, 'Rate 1 to 5'));
+      [['5', '5 Excellent'], ['4', '4 Good'], ['3', '3 Fair'], ['2', '2 Weak'], ['1', '1 Poor']].forEach(function (o) { sel.appendChild(el('option', { value: o[0] }, o[1])); });
+    });
+    var scored = state.candidates.filter(function (c) { return c.scorecards && c.scorecards.length; })
+      .sort(function (a, b) { return scoreAvgs(b).overall - scoreAvgs(a).overall; });
+    if (!detailId || !byId(detailId) || !byId(detailId).scorecards.length) detailId = scored.length ? scored[0].id : null;
+
+    var cmp = $('cmp-grid'); cmp.textContent = '';
+    var cols = [['Candidate'], ['Stage'], ['Scorecards', 1]];
+    CRITERIA.forEach(function (k) { cols.push([k.name, 1]); });
+    cols.push(['Overall', 1], ['']);
+    var tb = headRow(cmp, cols);
+    if (!scored.length) emptyRow(tb, cols.length, 'No scorecards yet. Save one above to start comparing.');
+    scored.forEach(function (c) {
+      var a = scoreAvgs(c);
+      var tr = el('tr', { 'class': c.id === detailId ? 'is-sel' : null, 'data-cmp': c.id });
+      tr.appendChild(el('th', { scope: 'row' }, c.name));
+      tr.appendChild(el('td', null, STAGES[stageIndex(c.stage)].name));
+      tr.appendChild(el('td', { 'class': 'num' }, String(a.n)));
+      CRITERIA.forEach(function (k) { tr.appendChild(scoreCell(a[k.id])); });
+      var ovc = scoreCell(a.overall); ovc.style.fontWeight = '700'; tr.appendChild(ovc);
+      var td = el('td');
+      var v = el('button', { type: 'button', 'class': 'btn-quiet', 'aria-label': 'Show all scorecards for ' + c.name }, 'Show all');
+      v.addEventListener('click', function () { detailId = c.id; renderScorecards(); $('detail-h').scrollIntoView({ behavior: smooth(), block: 'nearest' }); });
+      td.appendChild(v); tr.appendChild(td);
+      tb.appendChild(tr);
+    });
+
+    var det = $('detail-grid'); det.textContent = '';
+    var dc = byId(detailId);
+    $('detail-h').textContent = dc ? 'All scorecards for ' + dc.name + ' (' + dc.scorecards.length + ')' : 'All scorecards';
+    var dcols = [['Interviewer']];
+    CRITERIA.forEach(function (k) { dcols.push([k.name, 1]); });
+    dcols.push(['Average', 1], ['Note'], ['']);
+    var db = headRow(det, dcols);
+    if (!dc) { emptyRow(db, dcols.length, 'Scorecards for the chosen candidate show here.'); return; }
+    dc.scorecards.forEach(function (x) {
+      var tr = el('tr');
+      tr.appendChild(el('th', { scope: 'row' }, x.who));
+      var sum = 0;
+      CRITERIA.forEach(function (k) { sum += x[k.id]; tr.appendChild(scoreCell(x[k.id])); });
+      tr.appendChild(scoreCell(sum / CRITERIA.length));
+      tr.appendChild(el('td', { 'class': 'note-cell' }, x.note || DASH));
+      var td = el('td');
+      var del = el('button', { type: 'button', 'class': 'btn-quiet', 'aria-label': 'Delete the scorecard from ' + x.who }, 'Delete');
+      del.addEventListener('click', function () { deleteScorecard(dc.id, x.id); });
+      td.appendChild(del); tr.appendChild(td);
+      db.appendChild(tr);
+    });
+    var a = scoreAvgs(dc);
+    var tr = el('tr', { 'class': 'avg-row' });
+    tr.appendChild(el('th', { scope: 'row' }, 'Average'));
+    CRITERIA.forEach(function (k) { tr.appendChild(scoreCell(a[k.id])); });
+    tr.appendChild(scoreCell(a.overall));
+    tr.appendChild(el('td')); tr.appendChild(el('td'));
+    db.appendChild(tr);
+  }
+  function saveScoreForm(e) {
+    e.preventDefault();
+    var err = $('sf-err');
+    var c = byId($('sf-cand').value);
+    var who = $('sf-who').value.trim();
+    if (!c) { err.textContent = 'Add a candidate to the board first.'; return; }
+    if (!who) { err.textContent = 'Enter the interviewer’s name.'; $('sf-who').focus(); return; }
+    var card = { id: 'sc' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), who: who, note: $('sf-note').value.trim(), t: Date.now() };
+    for (var i = 0; i < CRITERIA.length; i++) {
+      var v = parseInt($('sf-' + CRITERIA[i].id).value, 10);
+      if (!validInt(v, 1, 5)) { err.textContent = 'Rate ' + CRITERIA[i].name + ' from 1 to 5.'; $('sf-' + CRITERIA[i].id).focus(); return; }
+      card[CRITERIA[i].id] = v;
+    }
+    err.textContent = '';
+    c.scorecards.push(card);
+    detailId = c.id;
+    $('sf-who').value = ''; $('sf-note').value = '';
+    CRITERIA.forEach(function (k) { $('sf-' + k.id).value = ''; });
+    save(); render();
+    toast('Scorecard from ' + who + ' saved for ' + c.name);
+  }
+  function deleteScorecard(cid, sid) {
+    var c = byId(cid);
+    if (!c) return;
+    var before = snapshot();
+    c.scorecards = c.scorecards.filter(function (x) { return x.id !== sid; });
+    save(); render();
+    toast('Scorecard deleted', function () { state = before; save(); render(); });
+  }
+
+  /* ---------- Start dates and ramp ---------- */
+  function startOf(c) { return parseLocalDate(c.startDate) || joiningDate(c); }
+  function addDays(d, n) { var x = new Date(d.getTime()); x.setDate(x.getDate() + n); return x; }
+  function syncRampInputs() {
+    var r = state.ramp;
+    [['rp-weeks', String(r.weeks)], ['rp-target', String(r.target)], ['rp-need', r.neededBy]].forEach(function (f) {
+      var n = $(f[0]);
+      if (document.activeElement !== n) n.value = f[1];
+    });
+  }
+  function renderRamp() {
+    syncRampInputs();
+    var r = state.ramp;
+    var offerIdx = stageIndex('offer');
+    var starters = state.candidates
+      .filter(function (c) { return stageIndex(c.stage) >= offerIdx && startOf(c); })
+      .map(function (c) { var st = startOf(c); return { c: c, start: st, floor: addDays(st, r.weeks * 7), set: !!parseLocalDate(c.startDate) }; })
+      .sort(function (a, b) { return a.floor - b.floor; });
+    var today = new Date(); today.setHours(0, 0, 0, 0);
+    var monday = addDays(today, -((today.getDay() + 6) % 7));
+    var need = parseLocalDate(r.neededBy) || addDays(today, 42);
+    var last = need;
+    starters.forEach(function (x) { if (x.floor > last) last = x.floor; });
+    var weeks = Math.min(26, Math.max(8, Math.ceil((last - monday) / (7 * DAY)) + 2));
+
+    var atNeed = starters.filter(function (x) { return x.floor <= need; }).length;
+    var alert = $('ramp-alert');
+    if (atNeed < r.target) {
+      alert.className = 'ramp-alert short';
+      alert.textContent = 'Short ' + (r.target - atNeed) + ' by ' + fmtDMY(need) + '. Agents on floor by then: ' + atNeed + ' of ' + r.target + '.';
+    } else {
+      alert.className = 'ramp-alert ok';
+      alert.textContent = 'On track. Agents on floor by ' + fmtDMY(need) + ': ' + atNeed + ' of ' + r.target + '.';
+    }
+
+    var g = $('ramp-grid'); g.textContent = '';
+    var tb = headRow(g, [['Week of'], ['Agents on floor'], [''], ['Starting'], ['Joining the floor']]);
+    var needMarked = false;
+    for (var w = 0; w < weeks; w++) {
+      var ws = addDays(monday, 7 * w), we = addDays(ws, 6);
+      var count = starters.filter(function (x) { return x.floor <= we; }).length;
+      var isNeed = !needMarked && need <= we;
+      if (isNeed) needMarked = true;
+      var tr = el('tr', { 'class': isNeed ? 'is-need' : null });
+      var th = el('th', { scope: 'row' }, fmtDMY(ws));
+      if (isNeed) th.appendChild(el('span', { 'class': 'need-tag' }, 'Needed by ' + fmtDMY(need)));
+      tr.appendChild(th);
+      tr.appendChild(el('td', { 'class': count < r.target ? 'sc-lo' : 'sc-hi' }, 'Agents on floor: ' + count + ' of ' + r.target));
+      var bar = el('span', { 'class': 'bar' + (count >= r.target ? ' full' : ''), 'aria-hidden': 'true' });
+      var fill = el('i'); fill.style.width = Math.min(100, Math.round(count / r.target * 100)) + '%';
+      bar.appendChild(fill);
+      var btd = el('td'); btd.appendChild(bar); tr.appendChild(btd);
+      function names(key) {
+        return starters.filter(function (x) { return x[key] >= ws && x[key] <= we; }).map(function (x) { return x.c.name; }).join(', ') || DASH;
+      }
+      tr.appendChild(el('td', null, names('start')));
+      tr.appendChild(el('td', null, names('floor')));
+      tb.appendChild(tr);
+    }
+
+    var sg = $('starter-grid'); sg.textContent = '';
+    var sb = headRow(sg, [['Candidate'], ['Stage'], ['Expected start'], ['Start date from'], ['On floor from']]);
+    if (!starters.length) emptyRow(sb, 5, 'Nobody in Offer or Hired has a start date yet. Add one on their card.');
+    starters.forEach(function (x) {
+      var tr = el('tr');
+      tr.appendChild(el('th', { scope: 'row' }, x.c.name));
+      tr.appendChild(el('td', null, STAGES[stageIndex(x.c.stage)].name));
+      tr.appendChild(el('td', null, fmtDMY(x.start)));
+      tr.appendChild(el('td', null, x.set ? 'Set on card' : 'Notice period'));
+      tr.appendChild(el('td', null, fmtDMY(x.floor)));
+      sb.appendChild(tr);
+    });
+  }
+  function rampInput(id, key, lo, hi) {
+    $(id).addEventListener('input', function () {
+      var n = Number($(id).value);
+      if (!validInt(n, lo, hi)) return;
+      state.ramp[key] = n; save(); safely(renderRamp);
+    });
+    $(id).addEventListener('change', function () { safely(renderRamp); });
+  }
+
+  /* ---------- Autopilot ---------- */
+  function renderAutopilot() {
+    $('auto-book').checked = !!state.auto.book;
+    $('auto-adv').checked = !!state.auto.advance;
+    var ul = $('auto-log');
+    ul.textContent = '';
+    if (!state.log.length) { ul.appendChild(el('li', { 'class': 'none' }, 'Nothing yet. Move someone to Interview on the board and it will show up here.')); return; }
+    state.log.slice(0, 6).forEach(function (e) {
+      var li = el('li');
+      li.appendChild(el('time', null, new Date(e.t).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })));
+      li.appendChild(el('span', null, e.text));
+      ul.appendChild(li);
+    });
+  }
+
+  function safely(fn) { try { fn(); } catch (e) { /* one tool failing must not stop the others */ } }
+  function renderExtras() {
+    safely(renderAutopilot);
+    safely(function () { fillCandSelect($('iv-cand')); });
+    if (ivCandId && !byId(ivCandId)) { ivCandId = null; $('iv-kit').textContent = ''; }
+    safely(renderIvResult);
+    safely(renderRecruiter);
+    safely(renderScheduler);
+    safely(renderScorecards);
+    safely(renderRamp);
+  }
+
+  /* ---------- Toast ---------- */
+  var toastTimer = null, undoFn = null;
+  function toast(msg, undo) {
+    $('toast-msg').textContent = msg;
+    undoFn = undo || null;
+    $('toast-undo').hidden = !undoFn;
+    $('toast').hidden = false;
+    window.clearTimeout(toastTimer);
+    toastTimer = window.setTimeout(hideToast, undoFn ? 8000 : 3500);
+  }
+  function hideToast() { $('toast').hidden = true; undoFn = null; }
+  $('toast-undo').addEventListener('click', function () {
+    var fn = undoFn; hideToast();
+    if (fn) { fn(); toast('Undone'); }
+  });
+
+  /* ---------- Wiring ---------- */
+  $('add-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var nameEl = $('f-name'), roleEl = $('f-role');
+    var name = nameEl.value.trim(), role = roleEl.value.trim();
+    $('e-name').textContent = name ? '' : 'Enter the candidate\u2019s name.';
+    $('e-role').textContent = role ? '' : 'Enter the role they applied for.';
+    nameEl.setAttribute('aria-invalid', name ? 'false' : 'true');
+    roleEl.setAttribute('aria-invalid', role ? 'false' : 'true');
+    // Offer details are optional. Blank is fine; a filled-in value has to be valid.
+    var accEl = $('f-accepted'), notEl = $('f-notice');
+    var accRaw = accEl.value;
+    var accOk = !(accEl.validity && accEl.validity.badInput) && (accRaw === '' || !!parseLocalDate(accRaw));
+    var notice = readNotice(notEl.value);
+    if (notEl.validity && notEl.validity.badInput) notice = { ok: false, value: null };
+    $('e-accepted').textContent = accOk ? '' : 'Enter a full date, or leave it blank.';
+    $('e-notice').textContent = notice.ok ? '' : NOTICE_MSG;
+    accEl.setAttribute('aria-invalid', accOk ? 'false' : 'true');
+    notEl.setAttribute('aria-invalid', notice.ok ? 'false' : 'true');
+    if (!name) { nameEl.focus(); return; }
+    if (!role) { roleEl.focus(); return; }
+    if (!accOk) { accEl.focus(); return; }
+    if (!notice.ok) { notEl.focus(); return; }
+    addCandidate(name, role, accRaw || null, notice.value);
+    nameEl.value = ''; roleEl.value = ''; accEl.value = ''; notEl.value = '';
+    nameEl.focus();
+  });
+
+  var daysEl = $('stuck-days');
+  daysEl.value = state.stuckDays;
+  function applyDays(commit) {
+    var n = parseInt(daysEl.value, 10);
+    if (isNaN(n)) { if (commit) daysEl.value = state.stuckDays; return; }
+    n = Math.min(90, Math.max(1, n));
+    if (commit) daysEl.value = n;
+    if (n !== state.stuckDays) { state.stuckDays = n; save(); render(); }
+  }
+  daysEl.addEventListener('input', function () { applyDays(false); });
+  daysEl.addEventListener('change', function () { applyDays(true); });
+
+  $('only-stuck').addEventListener('change', function (e) { onlyStuck = e.target.checked; renderLanes(); });
+  $('reset-btn').addEventListener('click', resetDemo);
+  $('rec-run').addEventListener('click', function () { recOpen = true; renderRecruiter(); $('rec-out').focus(); });
+  $('iv-start').addEventListener('click', startInterview);
+  $('sc-auto').addEventListener('click', bookNextSlot);
+  $('sc-book').addEventListener('click', bookChosenTime);
+  $('auto-book').addEventListener('change', function (e) { state.auto.book = e.target.checked; save(); });
+  $('auto-adv').addEventListener('change', function (e) { state.auto.advance = e.target.checked; save(); });
+  $('score-form').addEventListener('submit', saveScoreForm);
+  $('sf-cand').addEventListener('change', function () { if (byId($('sf-cand').value) && byId($('sf-cand').value).scorecards.length) { detailId = $('sf-cand').value; renderScorecards(); } });
+  rampInput('rp-weeks', 'weeks', 0, 12);
+  rampInput('rp-target', 'target', 1, 500);
+  $('rp-need').addEventListener('input', function () {
+    var v = $('rp-need').value;
+    if (!parseLocalDate(v)) return;
+    state.ramp.neededBy = v; save(); safely(renderRamp);
+  });
+  $('rp-need').addEventListener('change', function () { safely(renderRamp); });
+
+  Array.prototype.forEach.call(document.querySelectorAll('a[href^="#"]'), function (a) {
+    a.addEventListener('click', function (e) {
+      var target = document.getElementById(a.getAttribute('href').slice(1));
+      if (!target) return;
+      e.preventDefault();
+      if (target.scrollIntoView) target.scrollIntoView({ behavior: smooth(), block: 'start' });
+    });
+  });
+
+  $('team-name').textContent = TEAM_NAME;
+  Array.prototype.forEach.call(document.querySelectorAll('.team-name'), function (n) { n.textContent = TEAM_NAME; });
+  if (ADDONS.length) {
+    var list = $('addon-list');
+    ADDONS.forEach(function (a) {
+      var li = el('li');
+      li.appendChild(el('strong', null, a.title));
+      li.appendChild(document.createTextNode(a.detail || ''));
+      list.appendChild(li);
+    });
+    list.hidden = false;
+    $('addon-h').hidden = false;
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
