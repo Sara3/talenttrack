@@ -695,7 +695,7 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
 
 <footer class="wrap site-foot">
   <p>TalentTrack is built by <strong id="team-name"></strong></p>
-  <span class="version">Version 13, 5 Oct 2026</span>
+  <span class="version">Version 14, 5 Oct 2026</span>
   <button type="button" class="btn-quiet" id="reset-btn">Reset demo data</button>
 </footer>
 
@@ -1496,40 +1496,77 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
 
   /* ---------- Bulk add ---------- */
   var ROLE_TBD = 'Role to confirm';
-  var ROLE_WORDS = /agent|lead|engineer|manager|cook|chef|driver|server|associate|designer|analyst|specialist|\brep\b|representative|cashier|assistant|supervisor|coordinator|recruiter|developer|executive|porter|dishwasher|barista|host|courier|packer|picker|nurse|teacher|clerk/i;
-  function cleanCell(x) { return x.replace(/^\s*(?:[-*•]|\d+[.)])\s+/, '').replace(/\s+/g, ' ').trim(); }
-  function parseBulk(text, batchRole, strictCommas) {
+  // Words that make a cell a job title rather than a person. Whole words only, so surnames like Sargent or Hostetler never match.
+  var ROLE_WORDS = /\b(?:agents?|engineers?|managers?|chefs?|associates?|designers?|analysts?|specialists?|reps?|representatives?|cashiers?|assistants?|supervisors?|coordinators?|recruiters?|developers?|executives?|dishwashers?|baristas?|couriers?|nurses?|teachers?|clerks?|planners?|operators?|technicians?|mechanics?|electricians?|accountants?|consultants?|administrators?|admin|officers?|attendants?|housekeepers?|housekeeping|receptionists?|concierge|bartenders?|waiters?|waitress|staff|workers?|helpers?|handlers?|loaders?|movers?|interns?|directors?|cdl|forklift|crew|support|sales|warehouse|front desk|line cook|prep cook)\b/i;
+  // These are also common surnames (Cole Porter, Ben Cook), so they only count as a job with a job word next to them, or on their own.
+  var ROLE_SOFT = /\b(?:cooks?|porters?|hosts?|drivers?|packers?|pickers?|leads?|servers?|bakers?|guards?|cleaners?)\b/i;
+  var ROLE_CONTEXT = /\b(?:line|prep|head|sous|kitchen|team|shift|delivery|truck|van|bus|night|day|front|desk|house|hotel|restaurant|bar|store|senior|junior|class|customer|moving|banquet|room|pastry|grill|security|office|bell|night|lead|support|sales|warehouse|cdl)\b/i;
+  var NAME_SUFFIX = /^(?:jr|sr|ii|iii|iv|phd|md)\.?$/i;
+  var HEADER_NAME = /^(?:candidate|applicant|full|first|employee)?\s*names?$/i;
+  var PICTO = null;
+  try { PICTO = new RegExp('[\\p{Extended_Pictographic}\\uFE0F\\u200D]', 'gu'); } catch (e) { PICTO = null; }
+  function isRole(x) {
+    x = String(x || '').trim();
+    if (!x || !/[A-Za-z]/.test(x)) return false;
+    if (ROLE_WORDS.test(x)) return true;
+    if (!ROLE_SOFT.test(x)) return false;
+    var w = x.split(' ');
+    return w.length === 1 || ROLE_CONTEXT.test(x.replace(ROLE_SOFT, '')) || x === x.toLowerCase();
+  }
+  function words(x) { return x.split(' ').length; }
+  // Leading bullets and numbering from Word, Outlook, Docs and chat apps, with or without a space or tab after them.
+  var MARKER = /^\s*(?:[-*•·◦▪▫‣⁃–—●○■□►▶✓✔>]+|\(?\d{1,3}[.)\]](?!\d)|\(?[a-z]\))\s*/;
+  function stripMarker(x) { return x.replace(MARKER, ''); }
+  function cleanCell(x) {
+    x = stripMarker(String(x || ''));
+    x = x.replace(/<[^<>]*@[^<>]*>|\([^()]*@[^()]*\)|\S+@\S+\.\S+/g, ' ');   // email addresses
+    if (PICTO) x = x.replace(PICTO, ' ');
+    x = x.replace(/^@+/, '').replace(/\s+/g, ' ').trim();
+    return x.replace(/^[,;、，；\s]+|[,;、，；\s]+$/g, '');
+  }
+  function normalise(text) {
+    return String(text || '').replace(/\r\n?/g, '\n').replace(/[​-‍⁠﻿]/g, '').replace(/[   　]/g, ' ');
+  }
+  var COMMAS = /\s*[,;、，；]\s*/;
+  function parseBulk(text, batchRole) {
     var role = (batchRole || '').trim();
-    var lines = String(text || '').split(/\r?\n/).map(function (l) { return l.trim(); }).filter(Boolean);
+    var lines = normalise(text).split('\n').map(function (l) { return stripMarker(l).trim(); }).filter(function (l) { return cleanCell(l); });
     var rows = [];
-    var words = function (x) { return x.split(' ').length; };
-    var isRole = function (x) { return ROLE_WORDS.test(x); };
+    function lastFirst(cells) {
+      // "Lopez, Maria", "Lopez, Maria Elena" and "Martin Luther King, Jr." are one person.
+      return cells.length === 2 && (NAME_SUFFIX.test(cells[1]) || (words(cells[0]) === 1 && !isRole(cells[1]) && !isRole(cells[0])));
+    }
     if (lines.length === 1 && lines[0].indexOf('\t') !== -1) {
       // One spreadsheet row: "Name<tab>Role", or several names copied across one row.
       var tcells = lines[0].split('\t').map(cleanCell).filter(Boolean);
-      if (tcells.length > 1 && !tcells.slice(1).some(isRole)) tcells.forEach(function (n) { rows.push([n, '']); });
+      if (tcells.length === 2 && !isRole(tcells[0]) && (isRole(tcells[1]) || words(tcells[1]) === 1 || /^[a-z]/.test(tcells[1]))) rows.push([tcells[0], tcells[1]]);
+      else if (tcells.length > 1 && !tcells.slice(1).some(isRole)) tcells.forEach(function (n) { rows.push([n, '']); });
       else if (tcells.length) rows.push([tcells[0], tcells.slice(1).join(', ')]);
     } else if (lines.length === 1) {
-      var parts = lines[0].split(/[;,]/).map(cleanCell).filter(Boolean);
-      if (parts.length === 1) parts = lines[0].split(/\s{2,}/).map(cleanCell).filter(Boolean);   // names separated by wide gaps
+      var line = lines[0];
+      var parts = line.split(COMMAS).map(cleanCell).filter(Boolean);
+      if (parts.length === 1) parts = line.split(/\s{2,}|\s+(?:\/|&|＆|and|\+)\s+/i).map(cleanCell).filter(Boolean);   // wide gaps, "/", "&", "and"
       if (parts.length === 2 && isRole(parts[1]) && !isRole(parts[0])) rows.push([parts[0], parts[1]]);
-      else if (strictCommas && parts.length === 2 && (words(parts[0]) === 1 || words(parts[1]) === 1)) rows.push([cleanCell(lines[0]), '']);   // "Lopez, Ana" is one person
+      else if (parts.length === 2 && /[,;]/.test(line) && lastFirst(parts)) rows.push([cleanCell(line), '']);
+      else if (parts.length === 2 && /[,;]/.test(line) && words(parts[0]) >= 2 && words(parts[1]) >= 2 && !isRole(parts[1])) parts.forEach(function (n) { rows.push([n, '']); });
       else parts.forEach(function (n) { rows.push([n, '']); });
     } else {
-      lines.forEach(function (l) {
-        var cells = l.indexOf('\t') !== -1 ? l.split('\t') : l.split(/\s*[,;|]\s*|\s+[-–—]\s+/);
-        cells = cells.map(cleanCell);
-        if (l.indexOf('\t') === -1 && cells.length === 2 && words(cells[0]) === 1 && words(cells[1]) === 1 && !isRole(cells[1])) {
-          rows.push([cleanCell(l), '']);   // "Lopez, Ana" on its own line is one person
-          return;
+      lines.forEach(function (l, i) {
+        var cells;
+        if (l.indexOf('\t') !== -1) cells = l.split('\t');
+        else {
+          cells = l.split(/\s*[,;|、，；]\s*|\s+[-–—]\s+/);
+          if (lastFirst(cells.map(cleanCell).filter(Boolean))) { rows.push([cleanCell(l), '']); return; }
         }
+        cells = cells.map(cleanCell);
+        while (cells.length && !cells[0]) cells.shift();   // empty first column
         var name = cells[0] || '';
         var r = cells.slice(1).filter(Boolean).join(', ');
+        if (i === 0 && HEADER_NAME.test(name)) return;   // header row from a spreadsheet
         rows.push([name, r]);
       });
     }
-    if (rows.length && /^(full\s*)?name$/i.test(rows[0][0])) rows.shift();   // header row from a spreadsheet
-    return rows.filter(function (r) { return r[0]; }).map(function (r) {
+    return rows.filter(function (r) { return r[0] && !HEADER_NAME.test(r[0]); }).map(function (r) {
       var name = r[0].slice(0, 80), own = r[1].slice(0, 80);
       return { name: name, role: own || role || ROLE_TBD, from: own ? 'row' : role ? 'batch' : 'missing' };
     });
@@ -2427,7 +2464,7 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
   });
 
   /* ---------- Wiring ---------- */
-  function nameRows() { return parseBulk($('f-name').value, $('f-role').value, true); }
+  function nameRows() { return parseBulk($('f-name').value, $('f-role').value); }
   function growName() { var n = $('f-name'); n.style.height = 'auto'; n.style.height = n.scrollHeight + 'px'; }
   function renderNameHint() {
     var rows = nameRows();
@@ -2457,7 +2494,7 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     if (rows.length > 1) {
       // A pasted or typed list: every name becomes its own candidate.
       addMany(rows);
-      nameEl.value = ''; roleEl.value = ''; renderNameHint();
+      nameEl.value = ''; roleEl.value = ''; accEl.value = ''; notEl.value = ''; renderNameHint();
       nameEl.focus();
       return;
     }
@@ -2657,6 +2694,9 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     [/^Stage for (.+)$/, function (m, who) { return who + 'のステージ'; }],
     [/^Remove (.+)$/, function (m, who) { return who + 'を削除'; }],
     [/^Removed (.+)$/, function (m, who) { return who + 'を削除しました'; }],
+    [/^Added (\d+) candidates? to Applied$/, function (m, n) { return '候補者' + n + '名を応募に追加しました'; }],
+    [/^(\d+) candidates will be added separately: (.+?)\.?$/, function (m, n, names) { return '候補者' + n + '名を個別に追加します: ' + names + '。'; }],
+    [/^Ready to add (\d+) candidates? to Applied:$/, function (m, n) { return '候補者' + n + '名を応募に追加します:'; }],
     [/^Added (.+) to Applied$/, function (m, who) { return who + 'を応募に追加しました'; }],
     [/^Add (\d+) candidates$/, function (m, n) { return '候補者' + n + '名を追加'; }],
     [/^With TalentTrack team: (.+)$/, function (m, who) { return 'TalentTrackチームが担当: ' + (JA[who] || who); }],
