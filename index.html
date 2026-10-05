@@ -205,6 +205,14 @@ button,input,select,textarea{font:inherit;color:inherit}
 .toast[hidden]{display:none}
 .toast button{background:none;border:0;color:inherit;font-weight:700;text-decoration:underline;cursor:pointer;padding:4px}
 
+/* hand-off */
+.c-owner{display:grid;gap:4px;margin:2px 0 8px;font-size:.78rem;font-weight:600;color:var(--muted)}
+.c-owner select{height:36px;padding:0 6px;border:1.5px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font-size:.85rem;font-weight:600;min-width:0;width:100%}
+.card[data-owner="ai"] .c-owner select{border-color:var(--s-screen)}
+.card[data-owner="team"] .c-owner select{border-color:var(--s-offer)}
+.badge-owner{font-weight:700;padding:1px 8px;border-radius:999px;background:var(--sunken);color:var(--ink)}
+.badge-owner.ai{color:var(--s-screen)}
+.badge-owner.team{color:var(--s-offer)}
 /* bulk add */
 .bulk-toggle{margin-top:10px;display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;font-size:.92rem;color:var(--muted)}
 .bulk{margin-top:12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;gap:12px}
@@ -474,10 +482,9 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
 
     <div class="ai-panel ai-auto" id="auto-panel">
       <h3>Autopilot</h3>
-      <p class="desc">Switch on the routine work you want done for you. Each rule runs the moment its trigger happens.</p>
+      <p class="desc">Runs for every candidate handed off to AI agents on their card. The agents interview them as soon as they reach Interview, and these rules cover the rest. Candidates you handle yourself or hand to our team are never moved automatically.</p>
       <div class="auto-rules">
         <label><input type="checkbox" id="auto-book"> <span>Book an interview slot as soon as someone reaches Interview</span></label>
-        <label><input type="checkbox" id="auto-ai"> <span>Hand the interview to the AI Interview Agent as soon as someone reaches Interview</span></label>
         <label><input type="checkbox" id="auto-adv"> <span>Move a candidate to the next stage after a strong interview (4.0 or higher)</span></label>
       </div>
       <p class="sub-h">Recent autopilot activity</p>
@@ -558,7 +565,7 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     <ol class="dfy">
       <li><h3>We run the pipeline</h3><p>We source and screen candidates for your open roles and keep every one of them on your board, with how long they have been waiting.</p></li>
       <li><h3>We do the interviews</h3><p>Our interviewers and the AI Interview Agent run structured interviews and score Empathy, Troubleshooting and Written communication, so you compare candidates on the same scale.</p></li>
-      <li><h3>We hand off the hire</h3><p>When you pick someone, we hand them off with their scorecards, offer details and start date, in whatever tools and locations your team already uses.</p></li>
+      <li><h3>You choose who runs each candidate</h3><p>Every card has a hand-off. Run a candidate yourself, hand them to our AI agents, or hand them to our consultants. Switch at any stage, and the hire reaches your team with their scorecards and start date, wherever you work.</p></li>
     </ol>
   </section>
 
@@ -683,8 +690,14 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     { title: 'Interview scorecards', detail: 'Rate Empathy, Troubleshooting and Written communication from 1 to 5 with the interviewer\u2019s name and a note. Any number of scorecards per candidate, averaged on the card and compared side by side.' },
     { title: 'Stage aging', detail: 'Every card shows its days in the current stage, and anyone over 5 days is flagged as stuck.' },
     { title: 'AI Interview Agent', detail: 'Hand the Interview stage to an agent. It runs a four-question support interview with follow-ups, scores Empathy, Troubleshooting and Written communication with the reasons shown, and saves a signed scorecard with the transcript.' },
+    { title: 'Hand-off on every candidate', detail: 'Choose who runs each candidate from their card: you, our AI agents, or our consultants. AI agents interview, book and move candidates automatically. You can switch at any stage.' },
     { title: 'Start dates and ramp', detail: 'Set expected start dates for Offer and Hired, a ramp period and a target agent count. See agents on the floor week by week and a warning when you will be short.' }
   ];
+  var OWNERS = {
+    manual: { label: 'You run it', short: 'You', option: 'You run it (manual)' },
+    ai: { label: 'AI agents', short: 'AI agents', option: 'Hand off to AI agents' },
+    team: { label: 'Our team', short: 'Our team', option: 'Hand off to our team' }
+  };
   var CRITERIA = [
     { id: 'empathy', name: 'Empathy' },
     { id: 'troubleshooting', name: 'Troubleshooting' },
@@ -717,7 +730,7 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     function shift(days) { return toYMD(new Date(today.getFullYear(), today.getMonth(), today.getDate() + days)); }
     var s = {
       stuckDays: 5,
-      auto: { book: true, advance: true, ai: true },
+      auto: { book: true, advance: true },
       ramp: { weeks: 2, target: 4, neededBy: shift(42) },
       log: [],
       candidates: rows.map(function (r, i) {
@@ -743,6 +756,7 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     ]);
     s.candidates[6].interviewAt = openSlot([]);   // one interview already on the calendar
     s.candidates[7].aiStatus = 'pending';         // waiting on the AI Interview Agent
+    ['ai', 'ai', 'manual', 'team', 'ai', 'manual', 'team', 'ai', 'team', 'manual'].forEach(function (o, i) { s.candidates[i].owner = o; });
     s.candidates[8].acceptedDate = shift(-2);
     s.candidates[8].noticeDays = 90;             // over 60: shows the renege-risk badge
     s.candidates[8].startDate = shift(19);
@@ -755,7 +769,7 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     if (!s.auto || typeof s.auto !== 'object') s.auto = {};
     if (typeof s.auto.book !== 'boolean') s.auto.book = true;
     if (typeof s.auto.advance !== 'boolean') s.auto.advance = true;
-    if (typeof s.auto.ai !== 'boolean') s.auto.ai = true;
+    delete s.auto.ai;
     if (!Array.isArray(s.log)) s.log = [];
     if (!s.ramp || typeof s.ramp !== 'object') s.ramp = {};
     if (!validInt(s.ramp.weeks, 0, 12)) s.ramp.weeks = 2;
@@ -763,6 +777,7 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     if (!parseLocalDate(s.ramp.neededBy)) { var nb = new Date(); nb.setDate(nb.getDate() + 42); s.ramp.neededBy = toYMD(nb); }
     s.candidates.forEach(function (c) {
       if (!Array.isArray(c.scorecards)) c.scorecards = [];
+      if (!OWNERS[c.owner]) c.owner = 'manual';
       if (typeof c.score === 'number' && isFinite(c.score)) {
         // Older versions kept the AI Interviewer result as a single number outside the scorecards.
         var r = Math.max(1, Math.min(5, Math.round(c.score)));
@@ -850,11 +865,11 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     if (iv === -1) return null;
     var idx = stageIndex(c.stage);
     if (idx > iv && typeof c.interviewAt === 'number') delete c.interviewAt;
-    if (idx === iv && state.auto.ai && c.aiStatus !== 'done') {
+    if (idx === iv && c.owner === 'ai' && c.aiStatus !== 'done') {
       c.aiStatus = 'pending';
       logAuto('Handed ' + c.name + '\u2019s interview to the AI Interview Agent');
     }
-    if (idx === iv && state.auto.book && typeof c.interviewAt !== 'number') {
+    if (idx === iv && c.owner === 'ai' && state.auto.book && typeof c.interviewAt !== 'number') {
       var t = openSlot(takenSlots(c.id));
       if (t) {
         c.interviewAt = t;
@@ -991,17 +1006,28 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     var next = STAGES[idx + 1];
     var d = daysIn(c);
     var stuck = isStuck(c);
-    var li = el('li', { 'class': 'card' + (stuck ? ' is-stuck' : ''), 'data-id': c.id });
+    var li = el('li', { 'class': 'card' + (stuck ? ' is-stuck' : ''), 'data-id': c.id, 'data-owner': c.owner || 'manual' });
     li.appendChild(el('p', { 'class': 'c-name' }, c.name));
     li.appendChild(el('p', { 'class': 'c-role' }, c.role));
+    var own = el('label', { 'class': 'c-owner' }, 'Who runs this candidate');
+    var osel = el('select', { 'class': 'o-owner', 'aria-label': 'Who runs ' + c.name });
+    Object.keys(OWNERS).forEach(function (k) {
+      var o = el('option', { value: k }, OWNERS[k].option);
+      if (k === (c.owner || 'manual')) o.selected = true;
+      osel.appendChild(o);
+    });
+    osel.addEventListener('change', function () { setOwner(c.id, osel.value); });
+    own.appendChild(osel);
     var meta = el('p', { 'class': 'c-meta' });
     meta.appendChild(el('span', null, d === 0 ? 'Here since today' : plural(d, 'day') + ' in this stage'));
+    meta.appendChild(el('span', { 'class': 'badge-owner ' + (c.owner || 'manual') }, 'Run by: ' + OWNERS[c.owner || 'manual'].short));
     if (stuck) meta.appendChild(el('span', { 'class': 'badge-stuck' }, 'Stuck'));
     if (isRenegeRisk(c)) meta.appendChild(el('span', { 'class': 'badge-renege' }, 'Renege risk'));
     if (typeof c.interviewAt === 'number') meta.appendChild(el('span', { 'class': 'badge-score badge-when' }, 'Interview booked ' + fmtWhen(c.interviewAt)));
     if (c.aiStatus === 'pending' && c.stage === 'interview') meta.appendChild(el('span', { 'class': 'badge-ai' }, 'AI interview pending'));
     if (c.aiStatus === 'done') meta.appendChild(el('span', { 'class': 'badge-ai' }, 'AI interviewed'));
     li.appendChild(meta);
+    li.appendChild(own);
 
     var avg = scoreAvgs(c);
     var box = el('div', { 'class': 'c-scores', 'aria-label': 'Scorecard averages', 'data-avg': avg ? avg.overall.toFixed(1) : '' });
@@ -1156,12 +1182,38 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
   /* ---------- Actions ---------- */
   function addCandidate(name, role, acceptedDate, noticeDays) {
     var c = { id: 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name: name, role: role, stage: STAGES[0].id, enteredAt: Date.now(),
-      acceptedDate: parseLocalDate(acceptedDate) ? acceptedDate : null, noticeDays: validNotice(noticeDays) ? noticeDays : null, scorecards: [] };
+      acceptedDate: parseLocalDate(acceptedDate) ? acceptedDate : null, noticeDays: validNotice(noticeDays) ? noticeDays : null, scorecards: [], owner: 'manual' };
     state.candidates.push(c);
     if (onlyStuck) { onlyStuck = false; $('only-stuck').checked = false; }
     save(); render();
     spotlight(c.id);
     toast('Added ' + name + ' to ' + STAGES[0].name);
+  }
+
+  /* ---------- Hand-off ---------- */
+  function setOwner(id, owner) {
+    var c = byId(id);
+    if (!c || !OWNERS[owner] || c.owner === owner) return;
+    var before = snapshot();
+    c.owner = owner;
+    var extra = '';
+    if (owner === 'ai') {
+      logAuto('Handed ' + c.name + ' off to AI agents');
+      if (c.stage === 'interview') {
+        if (c.aiStatus !== 'done') { c.aiStatus = 'pending'; extra = '. The AI Interview Agent will interview them'; }
+        if (state.auto.book && typeof c.interviewAt !== 'number') {
+          var tm = openSlot(takenSlots(c.id));
+          if (tm) { c.interviewAt = tm; logAuto('Booked ' + c.name + ' for ' + fmtWhen(tm)); }
+        }
+      }
+    } else {
+      if (c.aiStatus === 'pending') delete c.aiStatus;
+      logAuto(owner === 'team' ? 'Handed ' + c.name + ' off to our team' : c.name + ' is back with you');
+    }
+    save(); render();
+    var card = document.querySelector('.card[data-id="' + id + '"] .o-owner');
+    if (card) card.focus();
+    toast((owner === 'manual' ? c.name + ' is now run by you' : 'Handed ' + c.name + ' off to ' + (owner === 'ai' ? 'AI agents' : 'our team')) + extra, function () { state = before; save(); render(); });
   }
 
   /* ---------- Bulk add ---------- */
@@ -1225,7 +1277,7 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     var before = snapshot();
     var now = Date.now();
     rows.forEach(function (r, i) {
-      state.candidates.push({ id: 'c' + now.toString(36) + i + Math.random().toString(36).slice(2, 5), name: r.name, role: r.role, stage: STAGES[0].id, enteredAt: now + i, acceptedDate: null, noticeDays: null, scorecards: [] });
+      state.candidates.push({ id: 'c' + now.toString(36) + i + Math.random().toString(36).slice(2, 5), name: r.name, role: r.role, stage: STAGES[0].id, enteredAt: now + i, acceptedDate: null, noticeDays: null, scorecards: [], owner: 'manual' });
     });
     if (onlyStuck) { onlyStuck = false; $('only-stuck').checked = false; }
     $('b-list').value = ''; $('b-role').value = '';
@@ -1485,7 +1537,7 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     detailId = c.id;
     var own = (card.empathy + card.troubleshooting + card.written) / 3;
     ivResult = { id: c.id, name: c.name, avg: own, level: own >= 4 ? 'strong' : own >= 3 ? 'mixed' : 'weak', autoMoved: null };
-    if (ivResult.level === 'strong' && state.auto.advance) {
+    if (ivResult.level === 'strong' && state.auto.advance && c.owner === 'ai') {
       var next = STAGES[stageIndex(c.stage) + 1];
       if (next) {
         c.stage = next.id; c.enteredAt = Date.now();
@@ -1986,7 +2038,7 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     c.aiStatus = 'done';
     detailId = c.id;
     var moved = null;
-    if (avg >= 4 && state.auto.advance) {
+    if (avg >= 4 && state.auto.advance && c.owner === 'ai') {
       var next = STAGES[stageIndex(c.stage) + 1];
       if (next) {
         c.stage = next.id; c.enteredAt = Date.now();
@@ -2022,7 +2074,6 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
   function renderAutopilot() {
     $('auto-book').checked = !!state.auto.book;
     $('auto-adv').checked = !!state.auto.advance;
-    $('auto-ai').checked = !!state.auto.ai;
     var ul = $('auto-log');
     ul.textContent = '';
     if (!state.log.length) { ul.appendChild(el('li', { 'class': 'none' }, 'Nothing yet. Move someone to Interview on the board and it will show up here.')); return; }
@@ -2126,7 +2177,6 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     e.preventDefault();
     openBulk(text);
   });
-  $('auto-ai').addEventListener('change', function (e) { state.auto.ai = e.target.checked; save(); });
   $('ag-cand').addEventListener('change', function () { $('ag-cand').dataset.touched = '1'; });
   $('ag-start').addEventListener('click', function () { if (AG) { AG.token = null; AG = null; } startAgent(); });
   $('ag-send').addEventListener('click', agSend);
