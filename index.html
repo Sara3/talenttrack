@@ -205,6 +205,24 @@ button,input,select,textarea{font:inherit;color:inherit}
 .toast[hidden]{display:none}
 .toast button{background:none;border:0;color:inherit;font-weight:700;text-decoration:underline;cursor:pointer;padding:4px}
 
+/* bulk add */
+.bulk-toggle{margin-top:10px;display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;font-size:.92rem;color:var(--muted)}
+.bulk{margin-top:12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;gap:12px}
+.bulk-grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:12px;align-items:start}
+.bulk textarea{width:100%;min-height:140px;padding:10px;border:1.5px solid var(--line);border-radius:8px;background:var(--bg);resize:vertical;font-family:var(--body)}
+.bulk .field input{height:44px}
+.b-hint{font-size:.85rem;color:var(--muted)}
+.b-preview{display:grid;gap:4px;max-height:220px;overflow-y:auto;font-size:.9rem}
+.b-preview li{display:flex;flex-wrap:wrap;gap:4px 10px;padding:6px 0;border-top:1px solid var(--line)}
+.b-preview .r{color:var(--muted)}
+.b-preview .warn{color:var(--stuck);font-weight:600}
+.b-count{font-weight:700}
+/* done-for-you */
+.dfy{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
+.dfy li{border-top:3px solid var(--primary);padding-top:12px}
+.dfy h3{font-family:var(--display);font-size:1.15rem;font-weight:700;margin-bottom:6px}
+.dfy p{color:var(--muted)}
+.eyebrow{display:inline-block;font-size:.8rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--primary);margin-bottom:12px}
 /* AI interview agent */
 .chat{display:flex;flex-direction:column;gap:10px;max-height:440px;overflow-y:auto;padding:14px;background:var(--bg);border:1px solid var(--line);border-radius:10px}
 .chat:empty{display:none}
@@ -261,6 +279,7 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
 
 @media (max-width:1000px){
   .sc-form{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .dfy{grid-template-columns:minmax(0,1fr)}
   .add-form{grid-template-columns:repeat(2,minmax(0,1fr))}
   .add-form .btn{grid-column:1/-1;margin-top:0}
   .board{grid-template-columns:minmax(0,1fr)}
@@ -272,6 +291,24 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
   .ai-grid{grid-template-columns:minmax(0,1fr)}
 }
 @media (max-width:640px){
+  .site-nav{flex-wrap:nowrap;overflow-x:auto;width:100%;gap:18px;padding-bottom:6px;-webkit-overflow-scrolling:touch}
+  .site-nav a{white-space:nowrap;padding:6px 0}
+  .bulk-grid,.dfy{grid-template-columns:minmax(0,1fr)}
+  .wrap{padding:0 16px}
+  .hero h1{font-size:2.1rem}
+  .toolbar{gap:10px 16px}
+  .tool{flex-wrap:wrap}
+  .lane-list{grid-template-columns:minmax(0,1fr)}
+  .card .btn,.btn-quiet,.c-select{min-height:40px}
+  .msg{max-width:90%}
+  .ai-panel{padding:16px}
+  .iv-pick .btn,.ai-panel>.btn{width:100%}
+  .ramp-controls .field{width:100%}
+  .grid th,.grid td{padding:8px 10px}
+  .toast{flex-wrap:wrap}
+  #ramp-grid th[scope=row]{white-space:normal;min-width:104px}
+  .need-tag{display:block;width:max-content;margin:4px 0 0}
+  #ramp-grid tr>*:nth-child(3){display:none}
   .rec-list li,.iv-q li{grid-template-columns:minmax(0,1fr);gap:8px}
   .rec-list li .btn,.iv-q select{justify-self:start}
   .add-form{grid-template-columns:minmax(0,1fr)}
@@ -305,6 +342,7 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     TalentTrack
   </a>
   <nav class="site-nav" aria-label="Sections">
+    <a href="#service">How we work</a>
     <a href="#board">Board</a>
     <a href="#scorecards">Scorecards</a>
     <a href="#starts">Start dates</a>
@@ -319,13 +357,14 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
 <main>
   <section class="wrap hero">
     <p class="team-tag">Built by <strong class="team-name"></strong></p>
-    <h1>Every candidate on one board.</h1>
-    <p class="lede">Add a candidate in seconds, move them stage by stage with one click, and see who has been waiting too long. Score interviews side by side and see when new agents will be on the floor.</p>
+    <span class="eyebrow">Hiring, done for you</span>
+    <h1>We hire and interview for you, then hand off.</h1>
+    <p class="lede">We are hiring consultants. We run your pipeline and the interviews, and every candidate shows up on this board as we go. When someone is ready, we hand them off to your team, wherever you work.</p>
   </section>
 
   <section class="wrap workspace" id="board" aria-labelledby="board-h">
     <h2 class="vh" id="board-h">Your hiring pipeline</h2>
-    <p class="ws-note">This is the working product, not a screenshot. Try it. Changes are saved in this browser.</p>
+    <p class="ws-note">This is the board we run your hiring on, and you see the same view. It is the working product, not a screenshot. Try it. Changes are saved in this browser.</p>
 
     <ol class="linemap" id="linemap" aria-label="Candidates per stage"></ol>
 
@@ -351,6 +390,31 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
         <p class="err" id="e-notice" role="alert"></p>
       </div>
       <button class="btn" type="submit" id="add-btn">Add candidate</button>
+    </form>
+    <div class="bulk-toggle">
+      <button type="button" class="btn btn-sm btn-ghost" id="bulk-toggle" aria-expanded="false" aria-controls="bulk">Add several candidates at once</button>
+      <span>Paste a list from a spreadsheet, an email or a chat.</span>
+    </div>
+    <form class="bulk" id="bulk" hidden novalidate>
+      <div class="bulk-grid">
+        <div class="field">
+          <label for="b-list">Candidates, one per line</label>
+          <textarea id="b-list" placeholder="Maya Okafor&#10;Daniel Reyes, Line Cook&#10;Hana Suzuki&#9;Kitchen Lead"></textarea>
+          <p class="b-hint">Put a role after a comma or a tab to give that person their own role. Rows copied from a spreadsheet work as they are.</p>
+        </div>
+        <div class="field">
+          <label for="b-role">Role for everyone else</label>
+          <input id="b-role" type="text" maxlength="80" autocomplete="off" placeholder="For example, Support Agent">
+          <p class="b-hint">Used for anyone without a role on their line. Leave it blank and they are added as "Role to confirm".</p>
+        </div>
+      </div>
+      <p class="b-count" id="b-count" aria-live="polite"></p>
+      <ul class="b-preview" id="b-preview"></ul>
+      <p class="err" id="b-err" role="alert"></p>
+      <div class="btn-row">
+        <button type="submit" class="btn" id="b-add">Add candidates</button>
+        <button type="button" class="btn-quiet" id="b-cancel">Cancel</button>
+      </div>
     </form>
 
     <div class="toolbar">
@@ -487,6 +551,15 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
       </div>
     </div>
     <p class="ai-note">These tools run in your browser and follow hiring rules you can read on screen. Calendar links open your own Google or Outlook calendar with the interview filled in.</p>
+  </section>
+
+  <section class="wrap band" id="service" aria-labelledby="service-h">
+    <h2 id="service-h">How we work with you</h2>
+    <ol class="dfy">
+      <li><h3>We run the pipeline</h3><p>We source and screen candidates for your open roles and keep every one of them on your board, with how long they have been waiting.</p></li>
+      <li><h3>We do the interviews</h3><p>Our interviewers and the AI Interview Agent run structured interviews and score Empathy, Troubleshooting and Written communication, so you compare candidates on the same scale.</p></li>
+      <li><h3>We hand off the hire</h3><p>When you pick someone, we hand them off with their scorecards, offer details and start date, in whatever tools and locations your team already uses.</p></li>
+    </ol>
   </section>
 
   <section class="wrap band" id="how" aria-labelledby="how-h">
@@ -1089,6 +1162,77 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
     save(); render();
     spotlight(c.id);
     toast('Added ' + name + ' to ' + STAGES[0].name);
+  }
+
+  /* ---------- Bulk add ---------- */
+  var ROLE_TBD = 'Role to confirm';
+  var ROLE_WORDS = /agent|lead|engineer|manager|cook|chef|driver|server|associate|designer|analyst|specialist|\brep\b|representative|cashier|assistant|supervisor|coordinator|recruiter|developer|executive|porter|dishwasher|barista|host|courier|packer|picker|nurse|teacher|clerk/i;
+  function cleanCell(x) { return x.replace(/^\s*(?:[-*•]|\d+[.)])\s+/, '').replace(/\s+/g, ' ').trim(); }
+  function parseBulk(text, batchRole) {
+    var role = (batchRole || '').trim();
+    var lines = String(text || '').split(/\r?\n/).map(function (l) { return l.trim(); }).filter(Boolean);
+    var rows = [];
+    if (lines.length === 1 && lines[0].indexOf('\t') === -1) {
+      var parts = lines[0].split(/[;,]/).map(cleanCell).filter(Boolean);
+      if (parts.length === 2 && ROLE_WORDS.test(parts[1]) && !ROLE_WORDS.test(parts[0])) rows.push([parts[0], parts[1]]);
+      else parts.forEach(function (n) { rows.push([n, '']); });
+    } else {
+      lines.forEach(function (l) {
+        var cells = l.indexOf('\t') !== -1 ? l.split('\t') : l.split(/\s*[,;|]\s*|\s+[-–—]\s+/);
+        cells = cells.map(cleanCell);
+        var name = cells[0] || '';
+        var r = cells.slice(1).filter(Boolean).join(', ');
+        rows.push([name, r]);
+      });
+    }
+    if (rows.length && /^(full\s*)?name$/i.test(rows[0][0])) rows.shift();   // header row from a spreadsheet
+    return rows.filter(function (r) { return r[0]; }).map(function (r) {
+      var name = r[0].slice(0, 80), own = r[1].slice(0, 80);
+      return { name: name, role: own || role || ROLE_TBD, from: own ? 'row' : role ? 'batch' : 'missing' };
+    });
+  }
+  function renderBulkPreview() {
+    var rows = parseBulk($('b-list').value, $('b-role').value);
+    var ul = $('b-preview'); ul.textContent = '';
+    $('b-count').textContent = rows.length ? 'Ready to add ' + plural(rows.length, 'candidate') + ' to ' + STAGES[0].name + ':' : '';
+    $('b-add').textContent = rows.length ? 'Add ' + plural(rows.length, 'candidate') : 'Add candidates';
+    rows.forEach(function (r) {
+      var li = el('li');
+      li.appendChild(el('strong', null, r.name));
+      li.appendChild(el('span', { 'class': r.from === 'missing' ? 'warn' : 'r' }, r.role + (r.from === 'batch' ? ' (role for everyone)' : '')));
+      ul.appendChild(li);
+    });
+    return rows;
+  }
+  function openBulk(text) {
+    $('bulk').hidden = false;
+    $('bulk-toggle').setAttribute('aria-expanded', 'true');
+    if (text != null) $('b-list').value = text;
+    if (!$('b-role').value && $('f-role').value.trim()) $('b-role').value = $('f-role').value.trim();
+    renderBulkPreview();
+    $('b-list').focus();
+  }
+  function closeBulk() {
+    $('bulk').hidden = true;
+    $('bulk-toggle').setAttribute('aria-expanded', 'false');
+    $('b-err').textContent = '';
+  }
+  function addBulk(e) {
+    e.preventDefault();
+    var rows = renderBulkPreview();
+    if (!rows.length) { $('b-err').textContent = 'Paste or type at least one name.'; $('b-list').focus(); return; }
+    $('b-err').textContent = '';
+    var before = snapshot();
+    var now = Date.now();
+    rows.forEach(function (r, i) {
+      state.candidates.push({ id: 'c' + now.toString(36) + i + Math.random().toString(36).slice(2, 5), name: r.name, role: r.role, stage: STAGES[0].id, enteredAt: now + i, acceptedDate: null, noticeDays: null, scorecards: [] });
+    });
+    if (onlyStuck) { onlyStuck = false; $('only-stuck').checked = false; }
+    $('b-list').value = ''; $('b-role').value = '';
+    closeBulk();
+    save(); render();
+    goToLane(STAGES[0].id);
+    toast('Added ' + plural(rows.length, 'candidate') + ' to ' + STAGES[0].name, function () { state = before; save(); render(); });
   }
 
   function moveCandidate(id, stageId, stay) {
@@ -1968,6 +2112,20 @@ table.grid{width:100%;border-collapse:collapse;font-size:.92rem;font-variant-num
   $('auto-book').addEventListener('change', function (e) { state.auto.book = e.target.checked; save(); });
   $('auto-adv').addEventListener('change', function (e) { state.auto.advance = e.target.checked; save(); });
   $('score-form').addEventListener('submit', saveScoreForm);
+  $('bulk-toggle').addEventListener('click', function () { if ($('bulk').hidden) openBulk(); else closeBulk(); });
+  $('b-cancel').addEventListener('click', closeBulk);
+  $('bulk').addEventListener('submit', addBulk);
+  $('b-list').addEventListener('input', renderBulkPreview);
+  $('b-role').addEventListener('input', renderBulkPreview);
+  // Pasting a list into the single name field opens bulk add instead of making one combined name.
+  $('f-name').addEventListener('paste', function (e) {
+    var text = (e.clipboardData || window.clipboardData) ? (e.clipboardData || window.clipboardData).getData('text') : '';
+    if (!text) return;
+    var many = /[\r\n\t]/.test(text.trim()) || text.split(/[;,]/).filter(function (x) { return x.trim(); }).length > 2;
+    if (!many) return;
+    e.preventDefault();
+    openBulk(text);
+  });
   $('auto-ai').addEventListener('change', function (e) { state.auto.ai = e.target.checked; save(); });
   $('ag-cand').addEventListener('change', function () { $('ag-cand').dataset.touched = '1'; });
   $('ag-start').addEventListener('click', function () { if (AG) { AG.token = null; AG = null; } startAgent(); });
