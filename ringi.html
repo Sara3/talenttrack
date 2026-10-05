@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TalentTrack ご提案概要</title>
+<style>
+  :root {
+    --bg: #fbfaf7; --surface: #ffffff; --text: #1d1d1b; --muted: #5f5e5a;
+    --line: #e4e1da; --accent: #2f5d50; --accent-soft: #e6efeb; --note: #fff6e0;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161715; --surface: #1f201e; --text: #ecebe6; --muted: #a8a69f;
+      --line: #34352f; --accent: #8cc4b2; --accent-soft: #23302b; --note: #2e2a1d;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Yu Gothic", "Noto Sans JP", sans-serif;
+  }
+  .langbar {
+    position: sticky; top: 0; z-index: 2; background: var(--surface);
+    border-bottom: 1px solid var(--line);
+  }
+  .langbar-inner { max-width: 820px; margin: 0 auto; padding: 0 16px; display: flex; gap: 4px; }
+  .langbar button {
+    font: inherit; font-size: 15px; background: none; border: 0; color: var(--muted);
+    padding: 12px 14px; cursor: pointer; border-bottom: 3px solid transparent;
+  }
+  .langbar button[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); font-weight: 600; }
+  main { max-width: 820px; margin: 0 auto; padding: 24px 16px 64px; }
+  h1 { font-size: 30px; line-height: 1.25; margin: 8px 0 4px; }
+  h2 { font-size: 21px; margin: 36px 0 8px; padding-top: 8px; border-top: 1px solid var(--line); }
+  .meta { color: var(--muted); font-size: 14px; margin: 0 0 20px; }
+  a { color: var(--accent); }
+  .table-wrap { overflow-x: auto; margin: 12px 0; }
+  table { border-collapse: collapse; width: 100%; background: var(--surface); font-size: 15px; }
+  th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+  th { font-weight: 600; background: var(--accent-soft); }
+  td.num, th.num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .note { background: var(--note); border-radius: 8px; padding: 10px 14px; font-size: 15px; }
+  .pitch { border-left: 3px solid var(--accent); padding: 4px 0 4px 14px; font-style: italic; }
+  .soon { display: inline-block; font-size: 12px; font-weight: 600; color: var(--accent); background: var(--accent-soft); border-radius: 999px; padding: 1px 8px; margin-left: 6px; }
+  footer { color: var(--muted); font-size: 14px; margin-top: 48px; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main lang="ja">
+  <h1>TalentTrack ご提案概要（稟議用）</h1>
+  <p class="meta">2026年10月5日 · Warm Intro Knights · <a href="brief.html#ja">製品概要</a> · <a href="brief.html#en">English</a></p>
+
+  <h2>概要</h2>
+  <p>TalentTrackは、採用代行サービスと軽量な応募者管理ツール（ATS）を組み合わせたサービスです。弊社が候補者の選考・面接を代行し、内定段階で貴社に引き継ぎます。候補者ごとに、面接と日程調整を誰が担当するかを選べます。</p>
+  <p>デモ：<a href="https://sara3.github.io/talenttrack/">sara3.github.io/talenttrack</a>（ログイン不要）</p>
+
+  <h2>業務フロー</h2>
+  <ol>
+    <li><strong>候補者の登録：</strong>貴社または弊社が候補者をボードに登録します。一覧の貼り付けによる一括登録も可能です。</li>
+    <li><strong>担当の決定：</strong>候補者ごとに「貴社」「TalentTrackチーム（担当リクルーター名を指定）」「AIエージェント」のいずれかを選びます。</li>
+    <li><strong>選考：</strong>応募から内定までの各段階を進めます。同じ段階に5日を超えている候補者には警告が表示されます。</li>
+    <li><strong>面接と評価：</strong>3つの評価項目でスコアを付け、平均点と候補者の比較表を確認できます。</li>
+    <li><strong>引き継ぎ：</strong>内定後は貴社に引き継ぎ、入社日と立ち上がり状況を管理します。</li>
+  </ol>
+  <p class="note">在留カード確認のステータス、担当者、滞留時の表示は現在開発中です。</p>
+
+  <h2>料金（案）</h2>
+  <p>月額プランに加え、弊社チームが担当した候補者についてのみ成果報酬をいただきます。以下は提案段階の価格であり、確定したものではありません。金額は米ドル建てです。</p>
+  <div class="table-wrap"><table>
+    <tr><th>担当</th><th>内容</th><th>料金</th></tr>
+    <tr><td>貴社</td><td>ボード、評価シート、滞留アラート、入社管理、利用者数無制限</td><td>月額99ドル</td></tr>
+    <tr><td>AIエージェント</td><td>上記に加え、AIによる日程調整と構造化された一次面接</td><td>月額299ドル</td></tr>
+    <tr><td>TalentTrackチーム</td><td>担当リクルーターが選考・面接・日程調整を行い、内定時に引き継ぎ</td><td>採用1名につき2,500ドル（入社日に請求）</td></tr>
+  </table></div>
+  <ul>
+    <li>1つのボードで3つの担当を組み合わせられます。</li>
+    <li>採用がなければ成果報酬は発生しません。弊社が担当した採用者が60日以内に退職した場合は、無償で後任を探します。</li>
+    <li>最初の30日間は無料で、契約は不要です。</li>
+  </ul>
+
+  <h2>サポート体制と役割分担</h2>
+  <div class="table-wrap"><table>
+    <tr><th>業務</th><th>貴社</th><th>TalentTrackチーム</th><th>AIエージェント</th></tr>
+    <tr><td>候補者の登録</td><td>実施</td><td>実施可（代行）</td><td>—</td></tr>
+    <tr><td>日程調整</td><td>担当を選んだ場合</td><td>担当を選んだ場合</td><td>担当を選んだ場合</td></tr>
+    <tr><td>一次面接と評価</td><td>担当を選んだ場合</td><td>担当を選んだ場合</td><td>担当を選んだ場合</td></tr>
+    <tr><td>最終面接と採用判断</td><td>常に貴社</td><td>助言のみ</td><td>—</td></tr>
+    <tr><td>ツールの不具合対応</td><td>—</td><td>実施</td><td>—</td></tr>
+    <tr><td>候補者データの管理</td><td>実施</td><td>—</td><td>—</td></tr>
+  </table></div>
+  <ul>
+    <li>採用の最終判断は常に貴社が行います。</li>
+    <li>お問い合わせの窓口は弊社チームです。対応時間と日本語対応の範囲は、契約前に書面で定めます。</li>
+    <li>現在のデモでは、データは各利用者のブラウザ内に保存され、チーム内では共有されません。</li>
+  </ul>
+
+  <h2>導入実績</h2>
+  <p>正式な契約顧客は、Sahyadri Techworks Pvt. Ltd.の1社です。その他の企業はデモを評価中であり、正式な顧客としてはご紹介できません。</p>
+  <p>日本国内にはまだ導入企業がなく、貴社は日本における初期導入企業となります。そのため、最初の30日間は範囲を限定して無償・契約不要でお試しいただけます。試行後に継続しない場合、費用は発生しません。</p>
+
+  <footer>この日本語文書は機械的に作成したものです。提出前に日本語ネイティブの方の確認をおすすめします。<br>TalentTrack · Warm Intro Knights</footer>
+</main>
+</body>
+</html>
